@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星坠之谜 · 文字卡牌RPG</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header id="topbar">
+    <div class="brand">✦ 星坠之谜 <span class="brand-sub">Mystery of the Fallen Star</span></div>
+    <div class="top-right">
+      <span id="hud-gold" class="hud-chip">💰 0</span>
+      <button id="btn-sound" class="ghost-btn" title="音效开关">🔊</button>
+      <button id="btn-menu" class="ghost-btn">☰ 菜单</button>
+    </div>
+  </header>
+
+  <main id="layout">
+    <aside id="charpanel"></aside>
+
+    <section id="stage">
+      <!-- 标题画面 -->
+      <div id="view-title" class="view"></div>
+
+      <!-- 剧情画面 -->
+      <div id="view-story" class="view" hidden>
+        <div id="scene-text" class="scene-text" title="点击可立即显示全部文字"></div>
+        <div id="choices" class="choices"></div>
+      </div>
+
+      <!-- 战斗画面 -->
+      <div id="view-combat" class="view" hidden></div>
+
+      <!-- 死亡画面 -->
+      <div id="view-death" class="view" hidden></div>
+    </section>
+  </main>
+
+  <footer id="logbar">
+    <div class="log-label">📜 记录</div>
+    <div id="log"></div>
+  </footer>
+
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/story.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

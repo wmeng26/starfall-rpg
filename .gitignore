@@ -1,0 +1,8 @@
+# 测试生成的截图与缓存
+tools/shots/
+__pycache__/
+*.pyc
+
+# 系统文件
+Thumbs.db
+Desktop.ini
