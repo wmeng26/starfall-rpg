@@ -34,8 +34,6 @@ const Story = {
     const text = (typeof scene.text === 'function') ? scene.text(G.state) : scene.text;
     const full = extra ? (extra + '\n\n' + text) : text;
     UI.typewriter($('#scene-text'), full, () => this.renderChoices(scene));
-    /* 若打字机被点击跳过，需要保证选项渲染 */
-    $('#scene-text').dataset.sceneDone = '';
   },
 
   /* 渲染选项 */
@@ -51,12 +49,16 @@ const Story = {
       const btn = document.createElement('button');
       btn.className = 'choice-btn' + (ch.combat ? ' combat-choice' : '') + (ch.check ? ' check-choice' : '');
 
-      let sub = ch.sub || (ch.subFn ? ch.subFn(s) : null) || '';
+      let sub = (ch.subFn ? ch.subFn(s) : null) || ch.sub || '';
       let disabled = false;
 
       if (ch.requireGold && s.player.gold < ch.requireGold) {
         disabled = true;
         sub = (sub ? sub + ' · ' : '') + '金币不足';
+      }
+      if (ch.disabled && ch.disabled(s)) {
+        disabled = true;
+        if (!sub) sub = '暂不可用';
       }
 
       btn.disabled = disabled;
@@ -104,6 +106,8 @@ const Story = {
       applyEffects(s, fx);
       UI.renderChar();
       UI.renderHud();
+      /* 剧情效果致死：战斗外没有濒死流程，直接进入死亡结算 */
+      if (s.player.hp <= 0) { Combat.lose(); return; }
     }
 
     /* 属性检定 */
@@ -122,6 +126,7 @@ const Story = {
         applyEffects(s, payload.fx);
         UI.renderChar();
         UI.renderHud();
+        if (s.player.hp <= 0) { Combat.lose(); return; }
       }
       this.outcome(diceLine + (payload ? payload.text : ''), payload);
       return;

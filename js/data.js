@@ -205,7 +205,7 @@ DATA.ENCOUNTERS = {
      text: string | (state)=>string,
      onEnter: (state)=>string|场景id   // 返回字符串则追加显示，返回场景id则立即跳转
      choices: [ choice ]  choice: {
-       text, icon?, sub?,
+       text, icon?, sub?, subFn?, disabled: (state)=>bool,
        show: (state)=>bool, once: 'flagKey',
        check: {stat, dc}, success: {text, go?, combat?, win?, fx?}, fail: {...},
        go, combat, win, fx: {gold,hp,item,card,flag,stat,xp,...}, special, cls
@@ -260,6 +260,7 @@ DATA.SCENES = {
       {
         text: '🛏️ 客栈歇脚', sub: '花费 10 金币，恢复全部生命',
         fx: { gold: -10, healPct: 100 }, requireGold: 10,
+        disabled: (s) => s.player.hp >= s.player.maxHp,
         subFn: (s) => s.player.hp >= s.player.maxHp ? '生命已满，无需休息' : null,
         show: (s) => s.player.hp < s.player.maxHp || s.player.gold >= 10,
         go: 'town',
@@ -301,7 +302,6 @@ DATA.SCENES = {
       },
       {
         text: '📖 听吟游诗人唱古塔的歌谣', once: 'tavern_lore',
-        success: null,
         go: 'tavern_lore',
       },
       { text: '↩️ 回到镇中心', go: 'town' },

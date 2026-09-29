@@ -191,6 +191,73 @@ with sync_playwright() as p:
     page.wait_for_timeout(400)
     check(page.evaluate('G.state.scene') == 'prologue', '从检查点复活')
 
+    # ================= 5. 回归：满血休息禁用 & 剧情致死结算 =================
+    print('== 回归修正 ==')
+    page.evaluate('''() => {
+        G.state = newGameState("warrior");
+        G.state.scene = "town";
+        Save.write(G.state);
+    }''')
+    goto_scene(page, 'town')
+    rest = page.evaluate('''() => {
+        const b = [...document.querySelectorAll('#choices .choice-btn')].find(x => x.textContent.includes('客栈歇脚'));
+        return b ? { disabled: b.disabled, text: b.textContent } : null;
+    }''')
+    check(rest is not None and rest['disabled'] is True, '满血时客栈歇脚按钮禁用')
+    check(rest is not None and '无需休息' in rest['text'], '满血休息提示文案显示')
+
+    page.evaluate('''() => {
+        G.state = newGameState("warrior");
+        G.state.player.stats.agi = -10;   /* 检定必败 */
+        G.state.player.hp = 6;
+        G.state.scene = "forest";
+        Save.write(G.state);
+    }''')
+    goto_scene(page, 'forest')
+    click_choice(page, '轻步穿行')
+    page.wait_for_timeout(1200)
+    check(page.locator('#view-death').is_visible(), '检定失败扣血至 0 触发死亡结算')
+    page.click('#d-retry')
+    page.wait_for_timeout(400)
+    check(page.evaluate('G.state.scene') == 'forest', '复活回到检查点场景')
+    check(page.evaluate('G.state.player.hp') == 6, '复活恢复检查点生命')
+
+    # ================= 6. 回归：战斗中面板禁用药水 & 移动端抽屉 =================
+    print('== 面板物品与移动端 ==')
+    page.evaluate('G.state = newGameState("warrior"); Combat.start("goblin_scout", "town");')
+    page.wait_for_timeout(400)
+    check(page.evaluate('document.querySelectorAll("#charpanel .item-use").length') == 0, '战斗中面板不显示物品使用按钮')
+    check(page.evaluate('document.querySelectorAll("#view-combat .itembtn").length') > 0, '战斗物品栏可用')
+    page.evaluate('Combat.abandon(); G.state = null;')
+
+    page.set_viewport_size({'width': 390, 'height': 844})
+    page.wait_for_timeout(200)
+    page.evaluate('''() => {
+        G.state = newGameState("warrior");
+        G.state.scene = "town";
+        G.state.player.hp = 40;
+        Save.write(G.state);
+    }''')
+    goto_scene(page, 'town')
+    check(page.evaluate('!document.getElementById("btn-panel").disabled'), '游戏中面板按钮可用')
+    box = page.locator('#charpanel').bounding_box()
+    check(box is not None and box['x'] < 0, '移动端面板默认收起在屏外')
+    page.click('#btn-panel')
+    page.wait_for_timeout(400)
+    box = page.locator('#charpanel').bounding_box()
+    check(box is not None and box['x'] <= 2, '点击按钮面板滑出')
+    use_btn = page.locator('#charpanel .item-use[data-item="potion"]')
+    check(use_btn.count() > 0, '抽屉内治疗药水可点击')
+    before_hp = page.evaluate('G.state.player.hp')
+    use_btn.first.click()
+    page.wait_for_timeout(250)
+    check(page.evaluate('G.state.player.hp') == before_hp + 25, '抽屉内使用药水生效 (%d→%d)' % (before_hp, before_hp + 25))
+    page.click('#panel-mask', position={'x': 370, 'y': 400})
+    page.wait_for_timeout(400)
+    box = page.locator('#charpanel').bounding_box()
+    check(box is not None and box['x'] < 0, '点遮罩收回面板')
+    page.set_viewport_size({'width': 1280, 'height': 860})
+
     browser.close()
 
 print('')

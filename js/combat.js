@@ -25,6 +25,11 @@ const Combat = {
 
   C: null, /* 当前战斗状态 */
 
+  /* 中途放弃战斗（回标题等）：置 over 以终止进行中的异步回合流程 */
+  abandon() {
+    if (this.C) { this.C.over = true; this.C = null; }
+  },
+
   /* ============ 开战 ============ */
   start(groupKey, winScene) {
     let key = groupKey;
@@ -58,6 +63,7 @@ const Combat = {
     G.state.stats.battles += 1;
     UI.log('⚔️ 遭遇：' + enemies.map((e) => e.name).join('、'), 'battle');
     UI.showView('combat');
+    UI.renderChar(); /* 重绘面板：战斗中隐藏面板物品"使用"按钮 */
     UI.renderHud();
 
     /* 唤起记忆：头目被削弱 */
@@ -261,6 +267,7 @@ const Combat = {
 
   async hitEnemy(e, base) {
     const C = this.C;
+    if (!C || !G.state) return;
     const dmg = this.calcDmg(base, C.player.statuses, e.statuses);
     let rest = dmg;
     if (e.block > 0) {
@@ -285,6 +292,7 @@ const Combat = {
   },
 
   healPlayer(n) {
+    if (!G.state) return;
     const p = G.state.player;
     const amt = Math.min(n, p.maxHp - p.hp);
     if (amt > 0) {
@@ -342,6 +350,7 @@ const Combat = {
         this.renderAll();
         UI.float(document.querySelector('[data-uid="' + e.uid + '"]'), '-' + pd + '(毒)', 'dmg');
         await sleep(420);
+        if (!G.state || C.over) return;
         if (e.hp <= 0) { G.state.stats.kills += 1; UI.log('💀 ' + e.name + ' 中毒身亡', 'battle'); continue; }
       }
 
@@ -371,7 +380,7 @@ const Combat = {
         const times = move.times || 1;
         UI.log('⚔️ ' + e.name + ' 使用了 ' + move.name, 'battle');
         for (let i = 0; i < times; i++) {
-          if (G.state.player.hp <= 0 || C.over) break;
+          if (!G.state || C.over || G.state.player.hp <= 0) break;
           const dmg = this.calcDmg(move.dmg, e.statuses, C.player.statuses);
           await this.applyPlayerDamage(dmg, e.name);
           await sleep(300);
@@ -399,16 +408,20 @@ const Combat = {
       if (e.statuses.weak) e.statuses.weak -= 1;
       if (e.statuses.vuln) e.statuses.vuln -= 1;
 
+      if (!G.state || C.over) return;
       if (G.state.player.hp <= 0) { this.lose(); return; }
       await sleep(260);
     }
 
     if (C.over) return;
+    /* 毒杀等非出牌击杀：敌方回合结束时也要结算胜利 */
+    if (C.enemies.every((e) => e.hp <= 0)) { await this.win(); return; }
     this.startPlayerTurn();
   },
 
   async applyPlayerDamage(dmg, sourceName) {
     const C = this.C;
+    if (!C || !G.state) return;
     let rest = dmg;
     if (C.player.block > 0) {
       const ab = Math.min(C.player.block, rest);
@@ -431,6 +444,7 @@ const Combat = {
   /* ============ 胜负 ============ */
   async win() {
     const C = this.C;
+    if (!G.state) return;
     C.over = true;
     C.busy = true;
     Sfx.play('win');
@@ -492,9 +506,7 @@ const Combat = {
 
   async lose() {
     const C = this.C;
-    if (!C) return;
-    C.over = true;
-    C.busy = true;
+    if (C) { C.over = true; C.busy = true; } /* 战斗外（剧情致死）也可复用 */
     Sfx.play('lose');
     UI.log('💀 你倒下了……', 'battle');
     await sleep(800);

@@ -70,7 +70,8 @@ button { font-family: var(--serif); }
   padding: 4px 10px; font-size: 13px; cursor: pointer;
   transition: all .15s;
 }
-.ghost-btn:hover { border-color: var(--gold-dim); color: var(--gold); }
+.ghost-btn:hover:not(:disabled) { border-color: var(--gold-dim); color: var(--gold); }
+.ghost-btn:disabled { opacity: .4; cursor: not-allowed; }
 
 /* ---------- 主布局 ---------- */
 #layout {
@@ -289,7 +290,7 @@ button { font-family: var(--serif); }
 .st-poison { color: #9fd49f; border-color: #5d8a5d; }
 .st-weak { color: #d0a2a2; border-color: #8a5d5d; }
 .st-vuln { color: #e0c08a; border-color: #8a7a4a; }
-.st-str { color: #e0937d; border-color: #9a5a4a; }
+.st-strength { color: #e0937d; border-color: #9a5a4a; }
 
 /* 手牌区 */
 .c-hand-area {
@@ -472,6 +473,10 @@ button { font-family: var(--serif); }
 ::-webkit-scrollbar-thumb { background: #3a2f52; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #5a4a7e; }
 
+/* ---------- 移动端角色面板抽屉 ---------- */
+.mobile-only { display: none; }
+#panel-mask { display: none; }
+
 /* ---------- 响应式 ---------- */
 @media (max-width: 980px) {
   #charpanel { flex-basis: 210px; }
@@ -480,6 +485,23 @@ button { font-family: var(--serif); }
 }
 @media (max-width: 760px) {
   #app { padding: 6px; }
-  #charpanel { display: none; }
   .title-name { font-size: 36px; letter-spacing: 8px; }
+  .brand-sub { display: none; }
+  .mobile-only { display: inline-block; }
+  /* 角色面板改为左侧抽屉：顶栏 🎒 滑出，点遮罩收回 */
+  #charpanel {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(320px, 86vw);
+    z-index: 90;
+    border-radius: 0 12px 12px 0;
+    transform: translateX(-105%);
+    transition: transform .25s ease;
+  }
+  body.panel-open #charpanel { transform: none; box-shadow: 14px 0 44px rgba(0,0,0,.65); }
+  body.panel-open #panel-mask {
+    display: block;
+    position: fixed; inset: 0; z-index: 80;
+    background: rgba(8,6,12,.55);
+  }
 }

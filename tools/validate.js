@@ -176,7 +176,55 @@ if (jjson.journal.notes.length !== 2) err('笔记序列化失败');
 console.log('  ✓ 任务/笔记 记录 · 去重 · 序列化 通过');
 console.log('  ✓ 效果结算 / 升级 / 序列化 通过');
 
-/* ---------- 汇总 ---------- */
-console.log('');
-if (errors) { console.error('✗ 发现 ' + errors + ' 个问题'); process.exit(1); }
-console.log('✓ 全部校验通过（场景 ' + sceneIds.length + ' · 卡牌 ' + Object.keys(CARDS).length + ' · 敌人 ' + Object.keys(ENEMIES).length + ' · 物品 ' + Object.keys(ITEMS).length + '）');
+/* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
+const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
+let deathCount = 0;
+const fakeEl = () => ({
+  innerHTML: '', textContent: '', style: {}, dataset: {}, hidden: false,
+  classList: { add() {}, remove() {} },
+  appendChild() {}, remove() {}, onclick: null, disabled: false,
+  querySelector: () => null, querySelectorAll: () => [],
+  getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
+  children: [], firstChild: null, scrollTop: 0, scrollHeight: 0,
+});
+const combatSandbox = new Function('document', 'window', 'localStorage', 'Main',
+  ['data.js', 'state.js', 'ui.js', 'story.js', 'combat.js'].map(readJs).join('\n') +
+  '\n;return { G, Combat, Story, newGameState };'
+)(
+  { querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
+    getElementById: () => fakeEl(), addEventListener() {}, body: fakeEl() },
+  { addEventListener() {}, AudioContext: null },
+  { getItem: () => null, setItem() {}, removeItem() {} },
+  { showDeath() { deathCount += 1; } }
+);
+const { G, Combat, Story, newGameState } = combatSandbox;
+
+(async () => {
+  console.log('== 战斗/死亡引擎冒烟 ==');
+
+  /* 敌人在敌方回合被毒死：应立即结算胜利 */
+  G.state = newGameState('warrior');
+  Combat.start('goblin_scout', 'town');
+  const c1 = Combat.C;
+  c1.enemies[0].hp = 1;
+  c1.enemies[0].statuses.poison = 3;
+  c1.hand = []; c1.draw = []; c1.discard = [];
+  await Combat.endTurn();
+  if (!(Combat.C && Combat.C.over && Combat.C.rewards)) err('毒杀最后一个敌人未立即结算胜利');
+  else console.log('  ✓ 毒杀最后一个敌人立即进入胜利结算');
+  Combat.C = null;
+
+  /* 剧情效果扣血至 0：应触发死亡结算 */
+  G.state = newGameState('warrior');
+  G.state.player.hp = 6;
+  Story.choose({ fx: { hp: -8 } });
+  await new Promise((r) => setTimeout(r, 950));
+  if (deathCount !== 1) err('剧情扣血至 0 未触发死亡结算');
+  else console.log('  ✓ 剧情扣血至 0 进入死亡结算');
+
+  /* ---------- 汇总 ---------- */
+  console.log('');
+  if (errors) { console.error('✗ 发现 ' + errors + ' 个问题'); process.exit(1); }
+  console.log('✓ 全部校验通过（场景 ' + sceneIds.length + ' · 卡牌 ' + Object.keys(CARDS).length + ' · 敌人 ' + Object.keys(ENEMIES).length + ' · 物品 ' + Object.keys(ITEMS).length + '）');
+  process.exit(0);
+})();

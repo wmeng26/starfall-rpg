@@ -153,13 +153,14 @@ with sync_playwright() as p:
     page.click('#scene-text')
     page.wait_for_timeout(200)
     gold_before = page.evaluate('G.state.player.gold')
+    potion_before = page.evaluate('G.state.items.potion || 0')
     page.locator('#choices .choice-btn', has_text='治疗药水').click()
     page.wait_for_timeout(300)
     page.click('#scene-text')
     page.wait_for_timeout(200)
     gold_after = page.evaluate('G.state.player.gold')
     check(gold_after == gold_before - 30, '购买药水扣款 30（%d→%d）' % (gold_before, gold_after))
-    check(page.evaluate('G.state.items.potion') == 3, '药水数量 +1（初始2）')
+    check(page.evaluate('G.state.items.potion') == potion_before + 1, '药水数量 +1（%d→%d）' % (potion_before, potion_before + 1))
 
     # ---- 自动存档 ----
     save_raw = page.evaluate('localStorage.getItem("starfall_rpg_save_v1")')

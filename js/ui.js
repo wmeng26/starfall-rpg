@@ -170,6 +170,7 @@ const UI = {
     const s = G.state;
     const panel = $('#charpanel');
     if (!s) { panel.innerHTML = ''; return; }
+    $('#btn-panel').disabled = false;
     const p = s.player;
     const cls = DATA.CLASSES[p.cls];
     const gb = gearBonus(s);
@@ -193,14 +194,17 @@ const UI = {
     let itemRows = '';
     const itemIds = Object.keys(s.items).filter((k) => s.items[k] > 0);
     if (itemIds.length === 0) itemRows = '<div class="cp-hint">行囊空空</div>';
+    /* 战斗中面板不提供"使用"：统一走战斗物品栏，避免无回合消耗地用药 */
+    const inCombat = typeof Combat !== 'undefined' && !!Combat.C && !Combat.C.over;
     for (const id of itemIds) {
       const it = DATA.ITEMS[id];
-      const usable = it.use && !it.combatOnly;
+      const usable = it.use && !it.combatOnly && !inCombat;
       itemRows +=
         '<div class="item-row"><span>' + it.art + ' ' + it.name + (s.items[id] > 1 ? ' ×' + s.items[id] : '') + '</span>' +
         (usable ? '<button class="item-use" data-item="' + id + '">使用</button>' : '') +
         '</div>';
     }
+    if (inCombat) itemRows += '<div class="cp-hint">⚔️ 战斗中请在战斗物品栏使用物品</div>';
 
     const deckCounts = {};
     for (const c of s.deck) deckCounts[c] = (deckCounts[c] || 0) + 1;

@@ -21,6 +21,7 @@ const Main = {
       Sfx.play('click');
     };
     $('#btn-menu').onclick = () => this.menuModal();
+    $('#btn-panel').onclick = () => this.togglePanel();
 
     this.showTitle();
   },
@@ -32,10 +33,12 @@ const Main = {
   /* ============ 标题 ============ */
   showTitle() {
     G.state = null;
-    Combat.C = null;
+    Combat.abandon();
     UI.showView('title');
     UI.renderHud();
     UI.renderChar();
+    $('#btn-panel').disabled = true;
+    this.togglePanel(false);
     $('#scene-text').innerHTML = '';
     $('#choices').innerHTML = '';
     $('#log').innerHTML = '';
@@ -75,6 +78,25 @@ const Main = {
       UI.toast('存档已删除', 'good');
       this.showTitle();
     };
+  },
+
+  /* ============ 移动端角色面板抽屉 ============ */
+  togglePanel(open) {
+    if (open === undefined) open = !document.body.classList.contains('panel-open');
+    if (!open) {
+      document.body.classList.remove('panel-open');
+      const m = $('#panel-mask');
+      if (m) m.remove();
+      return;
+    }
+    if (!G.state) return; /* 标题画面不展开 */
+    document.body.classList.add('panel-open');
+    if (!$('#panel-mask')) {
+      const mask = document.createElement('div');
+      mask.id = 'panel-mask';
+      mask.onclick = () => this.togglePanel(false);
+      document.body.appendChild(mask);
+    }
   },
 
   /* ============ 菜单 ============ */
