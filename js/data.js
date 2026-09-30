@@ -56,6 +56,7 @@ DATA.CARDS = {
   execute:     { id: 'execute', name: '处决', cost: 2, type: 'attack', cls: 'warrior', rarity: 'rare', target: 'enemy', fx: { special: 'execute' }, desc: '目标生命低于 40% 时造成 22 点伤害，否则 9 点。' },
   whirlwind:   { id: 'whirlwind', name: '旋风斩', cost: 1, type: 'attack', cls: 'warrior', rarity: 'common', target: 'all', fx: { dmgAll: 5 }, desc: '对所有敌人造成 5 点伤害。' },
   starfall_slash: { id: 'starfall_slash', name: '星陨斩', cost: 2, type: 'attack', cls: 'warrior', rarity: 'rare', target: 'enemy', fx: { dmg: 9, statusSelf: { strength: 1 } }, desc: '造成 9 点伤害，获得 1 层力量。' },
+  blood_rage:  { id: 'blood_rage', name: '燃血', cost: 0, type: 'skill', cls: 'warrior', rarity: 'rare', target: 'self', fx: { hp: -4, statusSelf: { strength: 2 } }, desc: '燃烧生命换取力量：失去 4 点生命，获得 2 层力量。' },
 
   /* —— 法师 —— */
   ice_shard:       { id: 'ice_shard', name: '冰锥', cost: 1, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 5, statusEnemy: { weak: 1 } }, desc: '造成 5 点伤害，给予 1 层虚弱。' },
@@ -67,6 +68,7 @@ DATA.CARDS = {
   mana_surge:      { id: 'mana_surge', name: '法力涌动', cost: 0, type: 'power', cls: 'mage', rarity: 'rare', target: 'self', fx: { energy: 2 }, desc: '本回合获得 2 点行动力。' },
   curse_bind:      { id: 'curse_bind', name: '咒缚', cost: 1, type: 'attack', cls: 'mage', rarity: 'rare', target: 'enemy', fx: { dmg: 3, statusEnemy: { weak: 2 } }, desc: '造成 3 点伤害，给予 2 层虚弱。' },
   supernova:       { id: 'supernova', name: '超新星', cost: 3, type: 'attack', cls: 'mage', rarity: 'rare', target: 'all', fx: { dmgAll: 10, statusAllEnemy: { vuln: 1 } }, desc: '对所有敌人造成 10 点伤害，给予 1 层易伤。' },
+  frost_armor:     { id: 'frost_armor', name: '霜甲术', cost: 1, type: 'skill', cls: 'mage', rarity: 'rare', target: 'self', fx: { block: 7, statusAllEnemy: { weak: 1 } }, desc: '获得 7 点护甲，所有敌人获得 1 层虚弱。' },
 
   /* —— 游侠 —— */
   double_shot:     { id: 'double_shot', name: '双重射击', cost: 1, type: 'attack', cls: 'ranger', rarity: 'starter', target: 'enemy', fx: { dmg: 4, times: 2 }, desc: '造成 4 点伤害，共 2 次。' },
@@ -77,6 +79,7 @@ DATA.CARDS = {
   piercing_arrow:  { id: 'piercing_arrow', name: '贯穿箭', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'enemy', fx: { dmg: 12 }, desc: '造成 12 点伤害。' },
   hunters_instinct:{ id: 'hunters_instinct', name: '猎人直觉', cost: 1, type: 'power', cls: 'ranger', rarity: 'rare', target: 'self', fx: { statusSelf: { strength: 1 }, draw: 1 }, desc: '获得 1 层力量，抽 1 张牌。' },
   triple_shot:     { id: 'triple_shot', name: '连珠三矢', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'enemy', fx: { dmg: 4, times: 3 }, desc: '造成 4 点伤害，共 3 次。' },
+  poison_rain:     { id: 'poison_rain', name: '淬毒箭雨', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'all', fx: { dmgAll: 4, statusAllEnemy: { poison: 2 } }, desc: '对所有敌人造成 4 点伤害，给予 2 层中毒。' },
 
   /* —— 中立 —— */
   first_aid:      { id: 'first_aid', name: '急救', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 9 }, desc: '恢复 9 点生命。' },
@@ -86,6 +89,7 @@ DATA.CARDS = {
   star_blessing:  { id: 'star_blessing', name: '星辰庇佑', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 6, heal: 4 }, desc: '获得 6 点护甲，恢复 4 点生命。' },
   meteor:         { id: 'meteor', name: '陨星术', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'all', fx: { dmgAll: 11 }, desc: '召引天火，对所有敌人造成 11 点伤害。' },
   echo_strike:    { id: 'echo_strike', name: '六人斩', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'enemy', fx: { dmg: 4, times: 4 }, desc: '六道残影与你并肩挥击，造成 4 点伤害，共 4 次。' },
+  chime:          { id: 'chime', name: '清铃音', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { cleanse: true, draw: 1 }, desc: '清脆的铃音驱散自身负面状态，抽 1 张牌。' },
   purify:         { id: 'purify', name: '净化之光', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { cleanse: true, heal: 5 }, desc: '清除自身所有负面状态，恢复 5 点生命。' },
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
   mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
@@ -106,6 +110,7 @@ DATA.GEAR = {
   miner_lamp:  { id: 'miner_lamp', name: '矿工的头灯', slot: 'charm', stat: 'int', v: 1, desc: '智力 +1' },
   star_speaker: { id: 'star_speaker', name: '星语者徽记', slot: 'charm', stat: 'cha', v: 1, desc: '魅力 +1' },
   star_blade:   { id: 'star_blade', name: '星辉长剑', slot: 'weapon', atk: 3, desc: '攻击伤害 +3' },
+  night_chime:  { id: 'night_chime', name: '守夜风铃', slot: 'charm', def: 1, desc: '护甲值 +1（铃音结界）' },
 };
 
 /* ============================ 物品 ============================ */
@@ -315,6 +320,7 @@ DATA.SCENES = {
     choices: [
       { text: '⚒️ 铁匠铺', sub: '购买装备与补给', go: 'smith' },
       { text: '🍺 雾语酒馆', sub: '打探消息', go: 'tavern' },
+      { text: '🎐 铃语斋', sub: '风铃匠的铺子', go: 'chimes' },
       { text: '🏛️ 镇长府', sub: '拜见镇长艾德温', go: 'elder' },
       {
         text: '🛏️ 客栈歇脚', sub: '花费 10 金币，恢复全部生命',
@@ -375,6 +381,20 @@ DATA.SCENES = {
     text: '诗人拨响一根低弦：\n\n"百年前，守塔人莫尔甘于塔顶封印影魔，以星核为锁，以性命为钥。\n此后雾锁小镇，再无人登塔。\n\n……直到那颗星星，砸穿了锁。"',
     choices: [
       { text: '……', go: 'tavern' },
+    ],
+  },
+
+  chimes: {
+    text: (s) => s.flags.inChimes
+      ? '"又是你。"聋伯手里的锉刀没停，"东西摆着，自己挑。"'
+      : '巷子深处有一间挂满风铃的小屋——几十只风铃，竟一只都不响。\n\n老匠人背对着你锉一枚铃舌，头也不回："想买就进来。别问铃为什么不响——我聋，它们哑，正好凑一对。"',
+    onEnter: (s) => { s.flags.inChimes = true; return null; },
+    choices: [
+      { text: '🂠 卡牌【清铃音】—— 70 金币', sub: '加入牌组：1 费 · 清除负面状态 + 抽 1 张牌', fx: { gold: -70, card: 'chime' }, requireGold: 70, once: 'bought_chime', go: 'chimes' },
+      { text: '📿 守夜风铃 —— 60 金币', sub: '饰品 · 护甲值 +1（铃音结界）', fx: { gold: -60, gear: 'night_chime' }, requireGold: 60, show: (s) => s.player.gear.charm !== 'night_chime', go: 'chimes' },
+      { text: '🎧 请聋伯敲一段老铃', sub: '铃音涤荡疲惫 · 恢复 20% 生命', once: 'chime_bless', fx: { healPct: 20 }, go: 'chimes' },
+      { text: '❓ 询问风铃的来历', sub: '满屋哑掉的铃，总有个缘故', once: 'asked_chimes', fx: { note: 'chime_lore' }, go: 'chimes' },
+      { text: '↩️ 回到镇中心', go: 'town' },
     ],
   },
 
@@ -932,6 +952,7 @@ DATA.NOTES = {
   keeper_journal:{ id: 'keeper_journal', title: '📜 守塔人的手记', text: '"雾又开始涨了。我把诗刻在门上——若有人念起它，或许能想起我不是怪物。……第两百一十四年。星核还在唱。我把耳朵贴着锁，听了整夜。"' },
   wall_whisper:  { id: 'wall_whisper', title: '👂 墙中的低语', text: '贴着第七巷的墙，低语一遍遍念着六个名字。数到第七个时——它停了一下，像是在等你补上。' },
   sixth_fate:    { id: 'sixth_fate', title: '📜 第六人的去向', text: '第七巷深处的裂缝旁，第六人的行囊叠得整整齐齐。前五个人被墙吃了；第六人放下了剑，自己走了进去。托马斯说"别信它说的话"——可有人信了。' },
+  chime_lore:    { id: 'chime_lore', title: '🎐 风铃的来历', text: '聋伯说：雾隐镇建镇那年，初代守塔人亲手调了满镇的风铃——"铃声不断，雾就不进镇。"铃，是锁的一部分。可如今，铃一只接一只地哑了。' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */

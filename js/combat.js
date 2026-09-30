@@ -242,6 +242,17 @@ const Combat = {
       this.renderAll();
     }
     if (fx.heal) this.healPlayer(fx.heal);
+    if (fx.hp) {
+      /* 卡牌自伤：失去生命，无视护甲（fx.hp 为负值） */
+      const p = G.state.player;
+      const loss = Math.min(-fx.hp, p.hp);
+      if (loss > 0) {
+        p.hp -= loss;
+        UI.float($('#p-avatar'), '-' + loss, 'dmg');
+        UI.log('🩸 你失去 ' + loss + ' 点生命', 'battle');
+        this.renderAll();
+      }
+    }
     if (fx.cleanse) {
       const st = C.player.statuses;
       for (const k of ['poison', 'weak', 'vuln']) delete st[k];
@@ -252,6 +263,7 @@ const Combat = {
 
     /* 胜负判定 */
     if (C.enemies.every((e) => e.hp <= 0)) { await this.win(); return; }
+    if (G.state.player.hp <= 0) { await this.lose(); return; }
 
     C.busy = false;
     this.renderAll();

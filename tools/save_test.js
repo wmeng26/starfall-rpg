@@ -500,10 +500,70 @@ async function main() {
     check(DATA.SCENES.seventh_win.onEnter(s) === null, '第七巷奖励只发放一次');
   }
 
+  console.log('== 铃语斋与职业卡 ==');
+
+  /* 34. 清铃音：清除负面状态 + 抽 1 张 */
+  {
+    G.state = newGameState('mage');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    C.player.statuses.poison = 2;
+    C.hand = ['chime']; C.draw = ['magic_bolt', 'magic_bolt']; C.energy = 3;
+    await Combat.playCard(0, null);
+    check(!C.player.statuses.poison, '清铃音清除自身中毒');
+    check(C.hand.length === 1, '清铃音打出后抽回 1 张（手牌 ' + C.hand.length + ' 张）');
+    Combat.C = null;
+  }
+
+  /* 35. 守夜风铃：饰品提供护甲加成 */
+  {
+    G.state = newGameState('warrior');
+    check(gearBonus(G.state).def === 1, '初始粗布衣护甲加成为 1');
+    G.state.player.gear.charm = 'night_chime';
+    check(gearBonus(G.state).def === 2, '守夜风铃使护甲加成 1 → ' + gearBonus(G.state).def);
+  }
+
+  /* 36. 三张职业构筑卡 */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    C.enemies[0].hp = 999; C.enemies[0].maxHp = 999;
+    C.hand = ['blood_rage']; C.energy = 3;
+    const hp0 = G.state.player.hp;
+    await Combat.playCard(0, null);
+    check(G.state.player.hp === hp0 - 4 && C.player.statuses.strength === 2, '燃血：失去 4 点生命，获得 2 层力量');
+    Combat.C = null;
+  }
+  {
+    G.state = newGameState('mage');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    C.hand = ['frost_armor']; C.energy = 3;
+    await Combat.playCard(0, null);
+    check(C.player.block === 7 && C.enemies[0].statuses.weak === 1, '霜甲术：7 点护甲 + 敌人虚弱 1');
+    Combat.C = null;
+  }
+  {
+    G.state = newGameState('ranger');
+    Combat.start('goblins2', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    const hp0 = C.enemies.map((e) => e.hp);
+    const dmg = 4 + gearBonus(G.state).atk;
+    C.hand = ['poison_rain']; C.energy = 3;
+    await Combat.playCard(0, null);
+    check(C.enemies.every((e, i) => e.hp === hp0[i] - dmg && e.statuses.poison === 2), '淬毒箭雨：全体 ' + dmg + ' 点伤害 + 2 层中毒');
+    Combat.C = null;
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 校验全部通过（33 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 校验全部通过（36 组）');
   process.exit(0);
 }
 

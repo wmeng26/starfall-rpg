@@ -48,7 +48,7 @@ for (const cid in CLASSES) {
 }
 
 /* 卡牌 */
-const FX_KEYS = ['dmg', 'times', 'dmgAll', 'block', 'heal', 'draw', 'energy', 'cleanse', 'statusEnemy', 'statusAllEnemy', 'statusSelf', 'special'];
+const FX_KEYS = ['dmg', 'times', 'dmgAll', 'block', 'heal', 'hp', 'draw', 'energy', 'cleanse', 'statusEnemy', 'statusAllEnemy', 'statusSelf', 'special'];
 const STATUSES = ['poison', 'weak', 'vuln', 'strength'];
 for (const id in CARDS) {
   const c = CARDS[id];
