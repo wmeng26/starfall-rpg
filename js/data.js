@@ -84,6 +84,7 @@ DATA.CARDS = {
   shadow_strike:  { id: 'shadow_strike', name: '影袭', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'enemy', fx: { dmg: 8 }, desc: '造成 8 点伤害。' },
   star_dust:      { id: 'star_dust', name: '星屑飞尘', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'all', fx: { dmgAll: 5, statusAllEnemy: { poison: 1 } }, desc: '对所有敌人造成 5 点伤害，给予 1 层中毒。' },
   star_blessing:  { id: 'star_blessing', name: '星辰庇佑', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 6, heal: 4 }, desc: '获得 6 点护甲，恢复 4 点生命。' },
+  meteor:         { id: 'meteor', name: '陨星术', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'all', fx: { dmgAll: 11 }, desc: '召引天火，对所有敌人造成 11 点伤害。' },
   purify:         { id: 'purify', name: '净化之光', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { cleanse: true, heal: 5 }, desc: '清除自身所有负面状态，恢复 5 点生命。' },
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
   mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
@@ -103,6 +104,7 @@ DATA.GEAR = {
   wolf_fang:   { id: 'wolf_fang', name: '狼王獠牙', slot: 'charm', stat: 'pow', v: 1, desc: '力量 +1' },
   miner_lamp:  { id: 'miner_lamp', name: '矿工的头灯', slot: 'charm', stat: 'int', v: 1, desc: '智力 +1' },
   star_speaker: { id: 'star_speaker', name: '星语者徽记', slot: 'charm', stat: 'cha', v: 1, desc: '魅力 +1' },
+  star_blade:   { id: 'star_blade', name: '星辉长剑', slot: 'weapon', atk: 3, desc: '攻击伤害 +3' },
 };
 
 /* ============================ 物品 ============================ */
@@ -189,6 +191,18 @@ DATA.ENEMIES = {
     { name: '腐化之息', toPlayer: { poison: 2 }, w: 2 },
     { name: '雾隐', block: 10, self: { strength: 1 }, w: 1 },
   ]},
+  /* —— 古塔 —— */
+  shard_wraith: { id: 'shard_wraith', name: '星屑怨影', art: '✨', hp: 24, xp: 22, gold: [10, 16], moves: [
+    { name: '光刃', dmg: 7, w: 3 },
+    { name: '尘暴', dmg: 3, times: 2, w: 2 },
+    { name: '摄魂', toPlayer: { vuln: 1 }, w: 1 },
+  ]},
+  star_golem:   { id: 'star_golem', name: '星轨石像', art: '☄️', hp: 50, xp: 45, gold: [30, 45], boss: true, moves: [
+    { name: '星锤', dmg: 11, w: 3 },
+    { name: '星轨护盾', block: 9, w: 2 },
+    { name: '引力牵引', toPlayer: { weak: 1 }, w: 2 },
+    { name: '碎星击', dmg: 5, times: 2, w: 1 },
+  ]},
   /* —— 头目 —— */
   worm:   { id: 'worm', name: '矿坑之王·掘地虫', art: '🪱', hp: 95, xp: 80, gold: [60, 80], boss: true, moves: [
     { name: '吞噬', dmg: 12, w: 3 },
@@ -223,6 +237,8 @@ DATA.GROUPS = {
   moth_swarm:     ['star_moth', 'star_moth', 'star_moth'],
   mist_stag:      ['mist_stag'],
   wisp_echo:      ['wisp_echo'],
+  tower_wraiths:  ['shard_wraith', 'shard_wraith'],
+  tower_guard:    ['star_golem'],
   boss_worm:      ['worm'],
   boss_morgan:    ['morgan', 'shadow_mage'],
 };
@@ -715,7 +731,77 @@ DATA.SCENES = {
         text: '🔥 在旅人的篝火旁休整', sub: '恢复 50% 生命', once: 'tower_rest',
         fx: { healPct: 50 }, go: 'tower_gate',
       },
-      { text: '🚪 踏入古塔', sub: '进入后将无法回头', go: 'tower_top' },
+      { text: '🚪 踏入古塔', sub: '塔底大厅 · 百年的尘封', go: 'tower_hall' },
+    ],
+  },
+
+  /* —— 古塔内部 —— */
+  tower_hall: {
+    text: '塔门在身后合拢，尘封百年的空气扑面而来。\n\n塔底大厅的穹顶绘满褪色的星轨，一道银沙漏自顶端垂落，仍在缓缓流转——这座塔的时间，似乎从没停止过。\n\n环形的墙壁上刻着一圈壁画，角落里散落着守塔人的遗物。旋梯自厅心盘旋而上，没入高处的阴影。',
+    choices: [
+      {
+        text: '🎨 解读星轨壁画', sub: '🎲 智力检定 · DC 12', once: 'read_fresco',
+        check: { stat: 'int', dc: 12 },
+        success: { text: '壁画描绘着百年前的那一夜：守塔人将影魔钉入塔顶，星核化作锁链。最末一格，他独自坐在祭坛边，在塔门上刻下一行诗。', fx: { xp: 15, note: 'tower_fresco' }, go: 'tower_hall' },
+        fail: { text: '星轨的刻线相互缠绕，你只能认出零星几个古字——大意是"锁"与"归还"。', go: 'tower_hall' },
+      },
+      { text: '🗝️ 搜查守塔人的遗物', sub: '尘封的壁龛', once: 'hall_loot', fx: { item: 'antidote', gold: 25 }, go: 'tower_hall' },
+      { text: '🌌 登上环廊的观星台', sub: '古塔的中层 · 藏书室', go: 'tower_archive' },
+      { text: '🌀 沿旋梯而上', sub: '星影游荡的中段', go: 'tower_stairs' },
+    ],
+  },
+
+  tower_archive: {
+    text: '观星台是一间环形藏书室。星图铺满四壁，其中一幅上，百年前的人用朱砂圈住了塔顶的位置。\n\n案几摊着一本手记，墨迹被岁月泡得发蓝。书架尽头，一台黄铜的星轨罗盘仍在滴答转动，唯独一根指针疯狂打转，像在寻找什么。',
+    choices: [
+      { text: '📜 研读守塔人的手记', sub: '泛蓝的墨迹', once: 'read_journal', fx: { note: 'keeper_journal', xp: 10 }, go: 'tower_archive' },
+      {
+        text: '🌠 校准星轨罗盘', sub: '🎲 智力检定 · DC 14', once: 'aligned_compass',
+        check: { stat: 'int', dc: 14 },
+        success: { text: '你依着星图的轨迹拨正指针。罗盘发出一声清鸣，一页夹藏的咒式弹了出来——那是守塔人誊录的星坠之力。', fx: { card: 'meteor' }, go: 'tower_archive' },
+        fail: { text: '指针在你指间疯狂逆转，星轨的光烧灼着指尖！但你咬着牙，硬是在紊乱的光影里抓到了那一瞬的咒式。（生命 -8）', fx: { hp: -8, card: 'meteor' }, go: 'tower_archive' },
+      },
+      { text: '↩️ 回到塔底大厅', go: 'tower_hall' },
+    ],
+  },
+
+  tower_stairs: {
+    text: '旋梯绕着塔心一路向上。中段的阴影里，几点星屑般的光屑无风自动——\n\n星屑怨影。百年孤独凝成的执念，守着这条通往塔顶的路。\n\n更高处，透下猩红的光。',
+    choices: [
+      { text: '⚔️ 斩碎星影，登上旋梯', sub: '遭遇战', combat: 'tower_wraiths', win: 'tower_landing' },
+      {
+        text: '🤫 贴着塔心阴影潜行', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '你把呼吸压到最轻，像一缕雾贴着塔心滑过。怨影的光屑在身后明灭，没有追来。', go: 'tower_landing' },
+        fail: { text: '一片光屑落在你肩头，瞬间燃起！怨影们尖叫着从阴影里涌出！', combat: 'tower_wraiths', win: 'tower_landing' },
+      },
+      { text: '↩️ 退回塔底大厅', go: 'tower_hall' },
+    ],
+  },
+
+  tower_landing: {
+    text: '旋梯中段豁然开阔。\n\n一泓星尘泉水自石缝渗出，在天坑里积成浅浅一汪，泛着温润的微光。旋梯继续向上，猩红的光愈发刺眼。\n\n一处凹室里立着一座石像——它的独眼里，星轨还在缓缓转动。',
+    choices: [
+      { text: '⛲ 掬一口星尘泉水', sub: '恢复 60% 生命 · 一次', once: 'star_spring', fx: { healPct: 60 }, go: 'tower_landing' },
+      { text: '🗿 对上凹室的星轨石像', sub: '精英战 · 它守着什么', combat: 'tower_guard', win: 'golem_win' },
+      { text: '🚪 沿旋梯直上塔顶', sub: '塔顶 · 一去不返', go: 'tower_top' },
+      { text: '↩️ 退回塔底大厅', go: 'tower_hall' },
+    ],
+  },
+
+  golem_win: {
+    onEnter: (s) => {
+      if (!s.flags.golemLoot) {
+        s.flags.golemLoot = true;
+        s.player.gear.weapon = 'star_blade';
+        return '【武器·星辉长剑（攻击伤害 +3，替换旧武器）】';
+      }
+      return null;
+    },
+    text: '星轨石像轰然碎裂，散作一地星砂。\n\n碎裂的胸腔里，一柄长剑静静悬浮——剑身的星辉沉淀成实体，刃口流转着百年前的月光。石像守了它一百年，直到等来一个配得上它的手。',
+    choices: [
+      { text: '🚪 沿旋梯直上塔顶', sub: '塔顶 · 一去不返', go: 'tower_top' },
+      { text: '↩️ 退回旋梯中段', go: 'tower_landing' },
     ],
   },
 
@@ -783,6 +869,8 @@ DATA.NOTES = {
   grove_lore:    { id: 'grove_lore', title: '🌿 药婆的话', text: '药婆雾葵说：星坠那夜，有星屑落进林心泉眼。"泉水喂了百年的山，如今山病了，泉也病了。会说话的雾不是泉生的——是乘着星屑的光，从更深的地方渗进来的。"' },
   wisp_pact:     { id: 'wisp_pact', title: '🩸 雾的契约', text: '"替我摘下泉底的微光，我便教你让血肉燃起星火的秘法。反正，这镇子的雾，又不是我造的。"——你收下了它的馈赠。低语仍在脑中盘旋。' },
   spring_pure:   { id: 'spring_pure', title: '💠 重澈的泉眼', text: '低语散尽，泉底的星屑浮上水面，碎成满潭清光。雾葵说，泉水喂了百年的山峦——泉清了，山或许还有救。' },
+  tower_fresco:  { id: 'tower_fresco', title: '🎨 塔底壁画', text: '壁画描绘百年前的那一夜：守塔人将影魔钉入塔顶，星核化作锁链。最末一格，他独自坐在祭坛边，在塔门上刻下一行诗。' },
+  keeper_journal:{ id: 'keeper_journal', title: '📜 守塔人的手记', text: '"雾又开始涨了。我把诗刻在门上——若有人念起它，或许能想起我不是怪物。……第两百一十四年。星核还在唱。我把耳朵贴着锁，听了整夜。"' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */

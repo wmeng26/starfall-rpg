@@ -438,10 +438,34 @@ async function main() {
     check(DATA.SCENES.wisp_win.onEnter(s2) === null, '重复进入不再发放奖励');
   }
 
+  console.log('== 古塔内部 ==');
+
+  /* 30. 星辉长剑：武器加成 3 */
+  {
+    G.state = newGameState('warrior');
+    check(gearBonus(G.state).atk === 1, '初始武器加成为 1');
+    G.state.player.gear.weapon = 'star_blade';
+    check(gearBonus(G.state).atk === 3, '星辉长剑使武器加成 1 → ' + gearBonus(G.state).atk);
+  }
+
+  /* 31. 陨星术：对全部敌人造成 11 点伤害（含武器加成） */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblins2', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    const hp0 = C.enemies.map((e) => e.hp);
+    const dmg = 11 + gearBonus(G.state).atk;
+    C.hand = ['meteor']; C.energy = 3;
+    await Combat.playCard(0, null);
+    check(C.enemies.every((e, i) => e.hp === hp0[i] - dmg), '陨星术对全体敌人各造成 ' + dmg + ' 点伤害（' + hp0.join('/') + '→' + C.enemies.map((e) => e.hp).join('/') + '）');
+    Combat.C = null;
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林支线 校验全部通过（29 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林支线 / 古塔内部 校验全部通过（31 组）');
   process.exit(0);
 }
 
