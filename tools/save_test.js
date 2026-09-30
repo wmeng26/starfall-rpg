@@ -386,10 +386,62 @@ async function main() {
     check(s.text({ flags: { inSmith: true } }).indexOf('又来了') >= 0, '再次进入显示回头客文本');
   }
 
+  console.log('== 星陨林支线 ==');
+
+  /* 26. 雾之契约：力量+2 与虚弱+1 同时生效 */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    C.hand = ['mist_pact']; C.energy = 3;
+    await Combat.playCard(0, null);
+    check(C.player.statuses.strength === 2 && C.player.statuses.weak === 1,
+      '雾之契约同时施加 力量2/虚弱1（实际 ' + JSON.stringify(C.player.statuses) + '）');
+    Combat.C = null;
+  }
+
+  /* 27. 星辉露珠：场外使用恢复 40 点 */
+  {
+    G.state = newGameState('warrior');
+    G.state.player.hp = G.state.player.maxHp - 50;
+    G.state.items.star_dew = 1;
+    const ok = useItemOutside(G.state, 'star_dew');
+    check(ok === true && G.state.items.star_dew === undefined, '星辉露珠使用后消耗');
+    check(G.state.player.hp === G.state.player.maxHp - 10, '星辉露珠恢复 40 点（' + (G.state.player.maxHp - 50) + '→' + G.state.player.hp + '）');
+  }
+
+  /* 28. 星语者徽记：提升魅力检定加值 */
+  {
+    G.state = newGameState('warrior');
+    const base = checkMod(G.state, 'cha');
+    G.state.player.gear.charm = 'star_speaker';
+    check(checkMod(G.state, 'cha') === base + 2, '星语者徽记使魅力检定加值 ' + base + ' → ' + (base + 2));
+  }
+
+  /* 29. 林心净化：奖励只发放一次，两条路径（击杀/诵咒）都能正确汇合 */
+  {
+    const s1 = newGameState('mage');
+    DATA.SCENES.grove_hut.onEnter(s1);               /* 接取支线 */
+    const r1 = DATA.SCENES.wisp_win.onEnter(s1);     /* 无饰品 → 发徽记 */
+    check(s1.flags.springDone === true, '净化标记已写入');
+    check(s1.player.gear.charm === 'star_speaker', '饰品空位时获得星语者徽记');
+    check(s1.deck.includes('star_dust') && s1.items.star_dew === 1, '星屑飞尘与星辉露珠已发放');
+    check(s1.journal.quests.some((q) => q.id === 'side_grove' && q.status === 'done'), '支线任务已完成');
+    check(typeof r1 === 'string' && r1.includes('星语者徽记'), '奖励文案含徽记');
+
+    const s2 = newGameState('mage');
+    s2.player.gear.charm = 'wolf_fang';
+    DATA.SCENES.grove_hut.onEnter(s2);
+    const r2 = DATA.SCENES.wisp_win.onEnter(s2);
+    check(r2.includes('40 金币'), '已有饰品时改为 40 金币谢礼');
+    check(DATA.SCENES.wisp_win.onEnter(s2) === null, '重复进入不再发放奖励');
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 校验全部通过（25 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林支线 校验全部通过（29 组）');
   process.exit(0);
 }
 

@@ -161,6 +161,56 @@ with sync_playwright() as p:
     check(not page.evaluate('!!localStorage.getItem("starfall_rpg_save_v1")'), '结局清档')
     page.screenshot(path=os.path.join(SHOT, '11_ending_dark.png'))
 
+    # ================= 2.5 星陨林支线 =================
+    print('== 星陨林支线 ==')
+    page.evaluate('''() => {
+        G.state = newGameState("warrior");
+        const st = G.state;
+        st.player.maxHp = 400; st.player.hp = 400; st.player.gold = 200; st.player.level = 4;
+        st.deck = ['heavy_slash','heavy_slash','heavy_slash','iron_wall','whirlwind','first_aid'];
+    }''')
+    goto_scene(page, 'crossroads')
+    click_choice(page, '猎人小径')
+    check(page.evaluate('G.state.scene') == 'grove_path', '岔路口进入星陨林')
+    page.screenshot(path=os.path.join(SHOT, '13_grove.png'))
+    click_choice(page, '捣药声的小屋')
+    check(page.evaluate('G.state.journal.quests.some(q => q.id === "side_grove" && q.status === "active")'), '药婆小屋接取支线「林心的异光」')
+    click_choice(page, '接下委托')
+    check(page.evaluate('G.state.scene') == 'grove_heart_pre', '抵达林心泉眼')
+    click_choice(page, '听它说什么')
+    check(page.evaluate('G.state.scene') == 'wisp_deal', '低语提出契约')
+    click_choice(page, '泉底的，才是受害者')
+    click_choice(page, '直接动手')
+    check(page.locator('#view-combat').is_visible(), '精英战·林心低语者开战')
+    page.evaluate('autoBattle()'); page.wait_for_timeout(400)
+    check(page.evaluate('pickFirstReward()'), '精英战胜利领奖')
+    page.wait_for_timeout(200)
+    check(page.evaluate('G.state.scene') == 'wisp_win', '泉眼净化完成')
+    check(page.evaluate('G.state.flags.springDone') == True, '净化标记 springDone 已写入')
+    check(page.evaluate('G.state.deck.includes("star_dust")'), '获得卡牌【星屑飞尘】')
+    check(page.evaluate('G.state.items.star_dew') == 1, '获得星辉露珠 ×1')
+    check(page.evaluate('G.state.player.gear.charm') == 'star_speaker', '饰品空位时获得星语者徽记')
+    check(page.evaluate('G.state.journal.quests.find(q => q.id === "side_grove").status') == 'done', '支线「林心的异光」已完成')
+    click_choice(page, '回药婆小屋道谢')
+    body = page.evaluate('document.getElementById("scene-text").textContent')
+    check('泉水清了' in body, '药婆感谢文本（净化后回访分支）')
+    goto_scene(page, 'grove_stag')
+    click_choice(page, '猎下这副雾角')
+    page.evaluate('autoBattle()'); page.wait_for_timeout(400)
+    check(page.evaluate('pickFirstReward()'), '雾角鹿战斗胜利')
+    page.wait_for_timeout(200)
+    check(page.evaluate('G.state.scene') == 'stag_win' and page.evaluate('G.state.flags.stagLoot') == True, '雾角鹿战利品结算')
+    check(page.evaluate('G.state.items.energy_potion') == 1, '获得能量药水 ×1')
+    # 契约分支：接受低语馈赠
+    page.evaluate('G.state = newGameState("ranger"); G.state.scene = "wisp_deal";')
+    goto_scene(page, 'wisp_deal')
+    click_choice(page, '成交')
+    check(page.evaluate('G.state.deck.includes("mist_pact")'), '契约分支获得【雾之契约】')
+    check(page.evaluate('G.state.flags.wispDeal') == True and page.evaluate('G.state.journal.notes.some(n => n.id === "wisp_pact")'), '契约标记与笔记已记录')
+    check(page.evaluate('G.state.flags.springDone ? false : true') == True, '接受契约不触发泉眼净化')
+    check(page.evaluate('DATA.SCENES.ending_dark.text(Object.assign(newGameState("warrior"), {flags:{wispDeal:true, minerSaved:true}})).includes("低语")'), '新王结局含契约回响')
+    check(page.evaluate('DATA.SCENES.ending_peace.text(Object.assign(newGameState("warrior"), {flags:{wispDeal:true}})).includes("低语")'), '长夜结局含契约回响')
+
     # ================= 3. 光明结局重定向 =================
     print('== 光明结局重定向 ==')
     page.evaluate('G.state = newGameState("mage"); G.state.flags.core = "pure"; G.state.flags.minerSaved = true;')

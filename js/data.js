@@ -55,6 +55,7 @@ DATA.CARDS = {
   battle_rage: { id: 'battle_rage', name: '蓄力', cost: 1, type: 'power', cls: 'warrior', rarity: 'rare', target: 'self', fx: { statusSelf: { strength: 2 } }, desc: '获得 2 层力量。（力量：每次攻击 +N 伤害）' },
   execute:     { id: 'execute', name: '处决', cost: 2, type: 'attack', cls: 'warrior', rarity: 'rare', target: 'enemy', fx: { special: 'execute' }, desc: '目标生命低于 40% 时造成 22 点伤害，否则 9 点。' },
   whirlwind:   { id: 'whirlwind', name: '旋风斩', cost: 1, type: 'attack', cls: 'warrior', rarity: 'common', target: 'all', fx: { dmgAll: 5 }, desc: '对所有敌人造成 5 点伤害。' },
+  starfall_slash: { id: 'starfall_slash', name: '星陨斩', cost: 2, type: 'attack', cls: 'warrior', rarity: 'rare', target: 'enemy', fx: { dmg: 9, statusSelf: { strength: 1 } }, desc: '造成 9 点伤害，获得 1 层力量。' },
 
   /* —— 法师 —— */
   ice_shard:       { id: 'ice_shard', name: '冰锥', cost: 1, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 5, statusEnemy: { weak: 1 } }, desc: '造成 5 点伤害，给予 1 层虚弱。' },
@@ -65,6 +66,7 @@ DATA.CARDS = {
   flamestorm:      { id: 'flamestorm', name: '烈焰风暴', cost: 3, type: 'attack', cls: 'mage', rarity: 'rare', target: 'all', fx: { dmgAll: 14 }, desc: '对所有敌人造成 14 点伤害。' },
   mana_surge:      { id: 'mana_surge', name: '法力涌动', cost: 0, type: 'power', cls: 'mage', rarity: 'rare', target: 'self', fx: { energy: 2 }, desc: '本回合获得 2 点行动力。' },
   curse_bind:      { id: 'curse_bind', name: '咒缚', cost: 1, type: 'attack', cls: 'mage', rarity: 'rare', target: 'enemy', fx: { dmg: 3, statusEnemy: { weak: 2 } }, desc: '造成 3 点伤害，给予 2 层虚弱。' },
+  supernova:       { id: 'supernova', name: '超新星', cost: 3, type: 'attack', cls: 'mage', rarity: 'rare', target: 'all', fx: { dmgAll: 10, statusAllEnemy: { vuln: 1 } }, desc: '对所有敌人造成 10 点伤害，给予 1 层易伤。' },
 
   /* —— 游侠 —— */
   double_shot:     { id: 'double_shot', name: '双重射击', cost: 1, type: 'attack', cls: 'ranger', rarity: 'starter', target: 'enemy', fx: { dmg: 4, times: 2 }, desc: '造成 4 点伤害，共 2 次。' },
@@ -74,13 +76,17 @@ DATA.CARDS = {
   swift_retreat:   { id: 'swift_retreat', name: '灵巧后跃', cost: 1, type: 'skill', cls: 'ranger', rarity: 'common', target: 'self', fx: { block: 4, statusAllEnemy: { weak: 1 } }, desc: '获得 4 点护甲，所有敌人获得 1 层虚弱。' },
   piercing_arrow:  { id: 'piercing_arrow', name: '贯穿箭', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'enemy', fx: { dmg: 12 }, desc: '造成 12 点伤害。' },
   hunters_instinct:{ id: 'hunters_instinct', name: '猎人直觉', cost: 1, type: 'power', cls: 'ranger', rarity: 'rare', target: 'self', fx: { statusSelf: { strength: 1 }, draw: 1 }, desc: '获得 1 层力量，抽 1 张牌。' },
+  triple_shot:     { id: 'triple_shot', name: '连珠三矢', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'enemy', fx: { dmg: 4, times: 3 }, desc: '造成 4 点伤害，共 3 次。' },
 
   /* —— 中立 —— */
   first_aid:      { id: 'first_aid', name: '急救', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 9 }, desc: '恢复 9 点生命。' },
   energy_crystal: { id: 'energy_crystal', name: '能量水晶', cost: 0, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { energy: 2 }, desc: '本回合获得 2 点行动力。' },
   shadow_strike:  { id: 'shadow_strike', name: '影袭', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'enemy', fx: { dmg: 8 }, desc: '造成 8 点伤害。' },
+  star_dust:      { id: 'star_dust', name: '星屑飞尘', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'all', fx: { dmgAll: 5, statusAllEnemy: { poison: 1 } }, desc: '对所有敌人造成 5 点伤害，给予 1 层中毒。' },
+  star_blessing:  { id: 'star_blessing', name: '星辰庇佑', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 6, heal: 4 }, desc: '获得 6 点护甲，恢复 4 点生命。' },
   purify:         { id: 'purify', name: '净化之光', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { cleanse: true, heal: 5 }, desc: '清除自身所有负面状态，恢复 5 点生命。' },
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
+  mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
 };
 
 /* ============================ 装备 ============================ */
@@ -96,12 +102,14 @@ DATA.GEAR = {
   amulet_agi:  { id: 'amulet_agi', name: '迅捷护腕', slot: 'charm', stat: 'agi', v: 1, desc: '敏捷 +1' },
   wolf_fang:   { id: 'wolf_fang', name: '狼王獠牙', slot: 'charm', stat: 'pow', v: 1, desc: '力量 +1' },
   miner_lamp:  { id: 'miner_lamp', name: '矿工的头灯', slot: 'charm', stat: 'int', v: 1, desc: '智力 +1' },
+  star_speaker: { id: 'star_speaker', name: '星语者徽记', slot: 'charm', stat: 'cha', v: 1, desc: '魅力 +1' },
 };
 
 /* ============================ 物品 ============================ */
 DATA.ITEMS = {
   potion:        { id: 'potion', name: '治疗药水', art: '🧪', desc: '恢复 25 点生命。', use: { heal: 25 }, price: 30 },
   big_potion:    { id: 'big_potion', name: '大治疗药水', art: '🍶', desc: '恢复 60 点生命。', use: { heal: 60 }, price: 65 },
+  star_dew:      { id: 'star_dew', name: '星辉露珠', art: '🌟', desc: '恢复 40 点生命。带着一点点星屑的甜。', use: { heal: 40 } },
   firebomb:      { id: 'firebomb', name: '火焰瓶', art: '🔥', desc: '对一名敌人造成 16 点伤害。（战斗）', use: { dmg: 16 }, combatOnly: true, price: 35 },
   energy_potion: { id: 'energy_potion', name: '能量药水', art: '⚡', desc: '获得 2 点行动力。（战斗）', use: { energy: 2 }, combatOnly: true, price: 50 },
   antidote:      { id: 'antidote', name: '解毒草', art: '🌿', desc: '清除自身负面状态。（战斗）', use: { cleanse: true }, combatOnly: true, price: 25 },
@@ -160,6 +168,27 @@ DATA.ENEMIES = {
     { name: '削弱', dmg: 3, toPlayer: { weak: 1 }, w: 2 },
     { name: '暗影屏障', block: 8, w: 1 },
   ]},
+  /* —— 星陨林 —— */
+  mist_wisp:  { id: 'mist_wisp', name: '雾灵', art: '🌫️', hp: 16, xp: 12, gold: [4, 8], moves: [
+    { name: '触鞭', dmg: 5, w: 3 },
+    { name: '低语', toPlayer: { weak: 1 }, w: 2 },
+    { name: '雾障', block: 5, w: 1 },
+  ]},
+  star_moth:  { id: 'star_moth', name: '星蛾', art: '🦋', hp: 13, xp: 10, gold: [3, 6], moves: [
+    { name: '扑翼', dmg: 4, times: 2, w: 3 },
+    { name: '迷鳞粉', toPlayer: { weak: 1 }, w: 2 },
+  ]},
+  mist_stag:  { id: 'mist_stag', name: '雾角鹿', art: '🦌', hp: 44, xp: 35, gold: [25, 35], moves: [
+    { name: '巨角突刺', dmg: 9, w: 3 },
+    { name: '踏地成甲', block: 7, w: 2 },
+    { name: '惊蹄', dmg: 3, times: 2, w: 1 },
+  ]},
+  wisp_echo:  { id: 'wisp_echo', name: '林心低语者', art: '👁️', hp: 72, xp: 60, gold: [45, 60], boss: true, moves: [
+    { name: '湮灭触手', dmg: 10, w: 3 },
+    { name: '心灵碎片', dmg: 4, times: 2, toPlayer: { vuln: 1 }, w: 2 },
+    { name: '腐化之息', toPlayer: { poison: 2 }, w: 2 },
+    { name: '雾隐', block: 10, self: { strength: 1 }, w: 1 },
+  ]},
   /* —— 头目 —— */
   worm:   { id: 'worm', name: '矿坑之王·掘地虫', art: '🪱', hp: 95, xp: 80, gold: [60, 80], boss: true, moves: [
     { name: '吞噬', dmg: 12, w: 3 },
@@ -190,13 +219,17 @@ DATA.GROUPS = {
   skeleton_spider:['skeleton', 'spider'],
   statue:         ['statue'],
   lurker:         ['lurker', 'bat'],
+  grove_wisps:    ['mist_wisp', 'mist_wisp'],
+  moth_swarm:     ['star_moth', 'star_moth', 'star_moth'],
+  mist_stag:      ['mist_stag'],
+  wisp_echo:      ['wisp_echo'],
   boss_worm:      ['worm'],
   boss_morgan:    ['morgan', 'shadow_mage'],
 };
 
 /* 随机遭遇池 */
 DATA.ENCOUNTERS = {
-  wild: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats'],
+  wild: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'moth_swarm'],
   mine: ['skeletons', 'spiders', 'bats', 'skeleton_spider', 'statue', 'lurker'],
 };
 
@@ -353,6 +386,7 @@ DATA.SCENES = {
     choices: [
       { text: '🌲 走黑松林', sub: '潜行与陷阱', go: 'forest' },
       { text: '⛰️ 走碎石山道', sub: '埋伏与谈判', go: 'mountain' },
+      { text: '🦌 猎人小径', sub: '星屑微光 · 未知的支线', go: 'grove_path' },
     ],
   },
 
@@ -422,6 +456,106 @@ DATA.SCENES = {
     text: '劫掠者的赃物袋里有些零钱，还有半张潮湿的矿坑地图——地图上，第七巷被红炭笔圈了三圈。\n\n风从矿坑的方向吹来，带着铁锈与腐土的气味。',
     choices: [
       { text: '⛏️ 前往矿坑入口', go: 'mine_entrance' },
+    ],
+  },
+
+  /* ============ 支线 · 星陨林 ============ */
+  grove_path: {
+    text: '岔路口的兽径尽头，雾忽然稀薄了。\n\n林间的空气泛着极淡的甜味。倒伏的枯木上生满发光的苔藓，一明一灭，像谁遗落的星屑还在呼吸。\n\n远处，溪水声与捣药声隐约可闻。而林子更深处，雾浓得化不开——那里有低语。',
+    choices: [
+      { text: '🏚️ 探访捣药声的小屋', sub: '有烟火气', go: 'grove_hut' },
+      { text: '💠 循着苔藓微光走向林心', sub: '雾最浓处 · 低语的源头', go: 'grove_heart_pre' },
+      { text: '🦌 循着溪边的新鲜蹄印', sub: '林子里还有别的活物', go: 'grove_stag' },
+      { text: '🌿 拨开雾蔓，探查窸窣声', sub: '遭遇战', combat: 'grove_wisps', win: 'grove_path' },
+      { text: '↩️ 返回岔路口', go: 'crossroads' },
+    ],
+  },
+
+  grove_hut: {
+    /* 文本先于 onEnter 求值：首访/再访/净化完成后 三态 */
+    text: (s) => s.flags.springDone
+      ? '小屋前的药架重新挂满了青绿的束草。雾葵把一枝星苜蓿别在你行囊上：\n\n"泉水清了，山就还有救。……拿着这枝花，路上泡水喝。"\n\n她重新埋首于药臼。捣杵声不紧不慢，像许多年前一样。'
+      : s.flags.inGroveHut
+        ? '捣杵声一下、一下。雾葵头也不抬：\n\n"泉眼在林心，顺着发光的苔藓走就是。……答应的事，可别忘了。"'
+        : '林间空地上歪着一座苔藓小屋，屋檐下挂满干草药束。\n\n佝偻的老药婆没有回头："站在门口做什么？星屑的气味熏了你一身——进来吧，外乡人。"',
+    onEnter: (s) => {
+      if (!s.flags.inGroveHut) { s.flags.inGroveHut = true; Quest.add(s, 'side_grove'); return '【支线任务：林心的异光】'; }
+      return null;
+    },
+    choices: [
+      { text: '💊 接下委托，前往林心', sub: '让泉水重新清澈', show: (s) => !s.flags.springDone, go: 'grove_heart_pre' },
+      { text: '❓ 询问星坠之夜的事', sub: '老人们总知道些什么', once: 'asked_grove', fx: { note: 'grove_lore' }, go: 'grove_hut' },
+      { text: '↩️ 告别，回到林间空地', go: 'grove_path' },
+    ],
+  },
+
+  grove_heart_pre: {
+    text: '林心是一片凹陷的浅潭。\n\n泉底沉着一点微光，像沉在水里的小小星星。而泉上盘着一团浓得发稠的黑雾——它没有眼睛，你却清晰地感觉到，它在看你。\n\n"来啦……"雾里渗出一个甜腻的声音，"守着这滩死水的老太婆，让你来做什么？"',
+    choices: [
+      { text: '💬 听它说什么', sub: '低语从来不安好心', go: 'wisp_deal' },
+      {
+        text: '🧘 依着酒馆古谣的调子，诵念净泉咒文', sub: '🎲 智力检定 · DC 13',
+        check: { stat: 'int', dc: 13 },
+        success: { text: '古谣的音节拼出了百年前的封印咒文。黑雾发出一声不甘的尖啸，像退潮般缩回泉底的微光里——潭水以肉眼可见的速度变得清澈。', go: 'wisp_win' },
+        fail: { text: '你念错了半个音节。黑雾骤然膨胀，潭水沸腾般翻涌起来——无数条雾之触手自水中立起！', combat: 'wisp_echo', win: 'wisp_win' },
+      },
+      { text: '⚔️ 不听，直接动手', sub: '精英战 · 林心低语者', combat: 'wisp_echo', win: 'wisp_win' },
+      { text: '↩️ 退回林间空地', go: 'grove_path' },
+    ],
+  },
+
+  wisp_deal: {
+    text: '"小东西……"雾在你耳边凝成一张笑着的嘴。\n\n"泉底那点微光困了我百年。替我摘下它，我便教你让血肉燃起星火的秘法。\n\n——反正，这镇子的雾，又不是我造的。"',
+    choices: [
+      { text: '🩸 "成交。"', sub: '获得禁忌卡牌 · 泉水将保持污浊', fx: { card: 'mist_pact', flag: 'wispDeal', note: 'wisp_pact' }, go: 'grove_path' },
+      { text: '✋ "泉底的，才是受害者。"', go: 'grove_heart_pre' },
+    ],
+  },
+
+  wisp_win: {
+    onEnter: (s) => {
+      if (s.flags.springDone) return null;
+      s.flags.springDone = true;
+      s.items.star_dew = (s.items.star_dew || 0) + 1;
+      s.deck.push('star_dust');
+      Quest.done(s, 'side_grove');
+      Note.add(s, 'spring_pure');
+      if (!s.player.gear.charm) {
+        s.player.gear.charm = 'star_speaker';
+        return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 饰品·星语者徽记（魅力+1）】\n【支线完成：林心的异光】';
+      }
+      s.player.gold += 40;
+      return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 40 金币（谢礼）】\n【支线完成：林心的异光】';
+    },
+    text: '低语散尽的瞬间，泉底那点微光浮上水面，碎成满潭星屑。\n\n潭水清冽得能照见树冠——许久没有生物敢在雾隐镇的荒野里，见到这样干净的倒影了。\n\n归途的方向，药草与炊烟的气味隐约传来。',
+    choices: [
+      { text: '🏚️ 回药婆小屋道谢', go: 'grove_hut' },
+      { text: '↩️ 返回林间空地', go: 'grove_path' },
+    ],
+  },
+
+  grove_stag: {
+    text: '溪水在青石上分成细流。\n\n一只鹿立在浅滩中央——如果那还能算鹿：双角如雾凝成，蹄下不见涟漪，唯有角尖坠着几点星屑似的微光。\n\n它转过头。漆黑的眼睛里，映着你的影子。',
+    choices: [
+      {
+        text: '🤫 垂首侧身，学鹿群示好的姿态', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '你放缓呼吸，垂下肩颈，把杀气收进鞘里。巨鹿凝视你良久，温热的鼻息拂过手背——它侧身让开溪道，角尖的微光轻轻碰了碰你的额头。', fx: { healPct: 100, card: 'star_blessing' }, go: 'grove_path' },
+        fail: { text: '脚下的碎石一滑。巨鹿一声长嘶，浓雾自角尖炸开——它低下头，巨角直指着你！', combat: 'mist_stag', win: 'stag_win' },
+      },
+      { text: '⚔️ 猎下这副雾角', sub: '它在雾里值钱', combat: 'mist_stag', win: 'stag_win' },
+      { text: '↩️ 悄悄退开', go: 'grove_path' },
+    ],
+  },
+
+  stag_win: {
+    onEnter: (s) => {
+      if (!s.flags.stagLoot) { s.flags.stagLoot = true; s.player.gold += 35; s.items.energy_potion = (s.items.energy_potion || 0) + 1; return '【获得 35 金币 / 能量药水 ×1】'; }
+      return null;
+    },
+    text: '雾角鹿轰然侧倒，化作漫天萤火般的星屑——它没有留下尸体，只有一双凝成实的雾角，静静躺在青石上。\n\n溪水重新流动起来。',
+    choices: [
+      { text: '↩️ 返回林间空地', go: 'grove_path' },
     ],
   },
 
@@ -607,21 +741,21 @@ DATA.SCENES = {
 
   /* ============ 结局 ============ */
   ending_light: {
-    text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】',
+    text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + (s.flags.wispDeal ? '你按了按太阳穴——那缕盘旋不去的低语，终于在光里安静了下来，像一声叹息。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】',
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
   },
 
   ending_dark: {
-    text: (s) => '你握碎碎片，任由黑暗贯通全身。\n\n剧痛之后，是前所未有的清明。你抬起手，雾便向两侧退开；你低语一声，星轨重新亮起。\n\n雾散了——以另一种方式。\n\n' + (s.flags.minerSaved ? '托马斯远远望着塔顶的你，摘帽，深深一躬。\n\n' : '') + '后来，雾隐镇的人们敬畏地称你为——新守塔人。\n星核的低语只对一人言说，而那人说：很好。\n\n—— 完 ——【结局 · 新王】',
+    text: (s) => '你握碎碎片，任由黑暗贯通全身。\n\n剧痛之后，是前所未有的清明。你抬起手，雾便向两侧退开；你低语一声，星轨重新亮起。\n\n雾散了——以另一种方式。\n\n' + (s.flags.minerSaved ? '托马斯远远望着塔顶的你，摘帽，深深一躬。\n\n' : '') + (s.flags.wispDeal ? '林心的那缕低语匍匐在星光之下——它认出了你，像一个认出旧主的老仆。\n\n' : '') + '后来，雾隐镇的人们敬畏地称你为——新守塔人。\n星核的低语只对一人言说，而那人说：很好。\n\n—— 完 ——【结局 · 新王】',
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
   },
 
   ending_peace: {
-    text: '镇长将碎片锁入圣龛，铁链缠了七道。\n\n雾依旧，但镇子活了下来。矿工们下井时会在巷口放一盏灯——给墙里的心跳听。\n\n偶尔，你会在梦里听见那搏动。不急。它说。\n\n—— 完 ——【结局 · 长夜】',
+    text: (s) => '镇长将碎片锁入圣龛，铁链缠了七道。\n\n雾依旧，但镇子活了下来。矿工们下井时会在巷口放一盏灯——给墙里的心跳听。\n\n偶尔，你会在梦里听见那搏动。不急。它说。\n\n' + (s.flags.wispDeal ? '而另一缕低语——林心的那一位——则在你血中轻轻笑了：和你的买卖，不会作数太久。\n\n' : '') + '—— 完 ——【结局 · 长夜】',
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
@@ -633,6 +767,7 @@ DATA.QUESTS = {
   main_mine:  { id: 'main_mine', kind: '主线', name: '调查迷雾矿坑', desc: '镇长悬赏：星坠石砸穿矿坑三层，七名矿工失踪。查明异动的源头，救回能救的人。' },
   main_tower: { id: 'main_tower', kind: '主线', name: '星核与古塔', desc: '星核碎片在掌中低语，古塔在北方山巅注视。带上它登上塔顶，面对守塔人莫尔甘。' },
   side_miner: { id: 'side_miner', kind: '支线', name: '巷道深处的呼救', desc: '矿坑一层传来微弱的呼救声，夹杂着窸窣的爬行声——有人还活着。' },
+  side_grove: { id: 'side_grove', kind: '支线', name: '林心的异光', desc: '药婆雾葵的泉眼被一团"会说话的雾"占了。低语许诺你力量——但低语从来不安好心。让泉水重新清澈起来。' },
 };
 
 DATA.NOTES = {
@@ -645,6 +780,9 @@ DATA.NOTES = {
   mine_log:      { id: 'mine_log', title: '📜 矿监日志', text: '"第七巷的墙不是墙。它在呼吸。我们凿穿了三层，矿工说下面有光——不该有光的。……如果你看到这本日志，带上电光瓶，然后跑。"' },
   core_whisper:  { id: 'core_whisper', title: '💠 星核的低语', text: '碎片有三种诉求：被净化，被吞噬，或被永远封存。而无论哪种，古塔都在注视着你。' },
   morgan_words:  { id: 'morgan_words', title: '😈 守塔人的话', text: '"把它交给我。或者，成为塔的一部分。"——堕落守塔人·莫尔甘，于塔顶祭坛。' },
+  grove_lore:    { id: 'grove_lore', title: '🌿 药婆的话', text: '药婆雾葵说：星坠那夜，有星屑落进林心泉眼。"泉水喂了百年的山，如今山病了，泉也病了。会说话的雾不是泉生的——是乘着星屑的光，从更深的地方渗进来的。"' },
+  wisp_pact:     { id: 'wisp_pact', title: '🩸 雾的契约', text: '"替我摘下泉底的微光，我便教你让血肉燃起星火的秘法。反正，这镇子的雾，又不是我造的。"——你收下了它的馈赠。低语仍在脑中盘旋。' },
+  spring_pure:   { id: 'spring_pure', title: '💠 重澈的泉眼', text: '低语散尽，泉底的星屑浮上水面，碎成满潭清光。雾葵说，泉水喂了百年的山峦——泉清了，山或许还有救。' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */
