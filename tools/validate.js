@@ -27,7 +27,7 @@ const DATA = new Function(dataSrc + '\n;return DATA;')();
 /* 带 UI 桩的沙盒，测试角色/效果逻辑 */
 const sandbox = new Function(
   'const UI={log(){},toast(){}};const Sfx={play(){}};\n' + dataSrc + '\n' + stateSrc +
-  '\n;return { newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note };'
+  '\n;return { newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod };'
 )();
 
 console.log('== 数据引用检查 ==');
@@ -90,6 +90,28 @@ for (const id in GEAR) {
   if (g.stat && !['pow', 'agi', 'int', 'cha'].includes(g.stat)) err('装备 ' + id + ' 未知属性加成');
 }
 
+/* 遗物 */
+const RELICS = DATA.RELICS;
+const RELIC_KEYS = ['startBlock', 'startStrength', 'enemyVuln', 'startLossHp', 'maxEnergy', 'energyFirst',
+                    'drawFirst', 'turnHeal', 'poisonPlus', 'thorns', 'winHeal', 'goldPct', 'xpPct', 'check'];
+for (const id in RELICS) {
+  const r = RELICS[id];
+  if (r.id !== id) err('遗物 id 不一致: ' + id);
+  if (!r.name || !r.icon || !r.desc) err('遗物 ' + id + ' 缺少名称/图标/描述');
+  let effectCount = 0;
+  for (const k in r) {
+    if (['id', 'name', 'icon', 'desc'].includes(k)) continue;
+    if (!RELIC_KEYS.includes(k)) err('遗物 ' + id + ' 未知效果字段: ' + k);
+    else effectCount++;
+  }
+  if (!effectCount) err('遗物 ' + id + ' 没有任何效果');
+  if (r.check) {
+    if (!['pow', 'agi', 'int', 'cha'].includes(r.check.stat)) err('遗物 ' + id + ' 检定属性非法');
+    if (typeof r.check.v !== 'number') err('遗物 ' + id + ' 检定加值非法');
+  }
+}
+if (new Set(Object.values(RELICS).map((r) => r.name)).size !== Object.keys(RELICS).length) err('遗物名称重复');
+
 /* 场景与跳转 */
 const sceneIds = Object.keys(SCENES);
 const checkScene = (from, id) => { if (id && !SCENES[id]) err('场景 ' + from + ' 跳转到未知场景: ' + id); };
@@ -99,6 +121,7 @@ const checkFx = (sid, fx, tag) => {
   if (fx.item && !ITEMS[fx.item]) err('场景 ' + sid + ' ' + tag + 'fx.item 未知: ' + fx.item);
   if (fx.useItem && !ITEMS[fx.useItem]) err('场景 ' + sid + ' ' + tag + 'fx.useItem 未知: ' + fx.useItem);
   if (fx.gear && !GEAR[fx.gear]) err('场景 ' + sid + ' ' + tag + 'fx.gear 未知: ' + fx.gear);
+  if (fx.relic && !DATA.RELICS[fx.relic]) err('场景 ' + sid + ' ' + tag + 'fx.relic 未知: ' + fx.relic);
   if (fx.note && !DATA.NOTES[fx.note]) err('场景 ' + sid + ' ' + tag + 'fx.note 未知: ' + fx.note);
   if (fx.quest && !DATA.QUESTS[fx.quest]) err('场景 ' + sid + ' ' + tag + 'fx.quest 未知: ' + fx.quest);
   if (fx.questDone && !DATA.QUESTS[fx.questDone]) err('场景 ' + sid + ' ' + tag + 'fx.questDone 未知: ' + fx.questDone);
@@ -112,6 +135,11 @@ while ((m = questRefRe.exec(dataSrc)) !== null) {
   const isNote = m[0].startsWith('Note');
   if (isNote) { if (!DATA.NOTES[id]) err('Note.add 未知笔记: ' + id); }
   else if (!DATA.QUESTS[id]) err('Quest.' + fn + ' 未知任务: ' + id);
+}
+/* 场景函数内 relics.push 的字面量引用 */
+const relicPushRe = /relics\.push\(\s*['"]([\w]+)['"]\s*\)/g;
+while ((m = relicPushRe.exec(dataSrc)) !== null) {
+  if (!DATA.RELICS[m[1]]) err('relics.push 未知遗物: ' + m[1]);
 }
 for (const sid of sceneIds) {
   const sc = SCENES[sid];
@@ -176,6 +204,21 @@ const jjson = JSON.parse(JSON.stringify(st2));
 if (jjson.journal.notes.length !== 2) err('笔记序列化失败');
 console.log('  ✓ 任务/笔记 记录 · 去重 · 序列化 通过');
 console.log('  ✓ 效果结算 / 升级 / 序列化 通过');
+/* 遗物：聚合 / 去重 / 检定加值 */
+const st3 = sandbox.newGameState('ranger');
+sandbox.applyEffects(st3, { relic: 'silver_tongue' });
+sandbox.applyEffects(st3, { relic: 'silver_tongue' });   /* 重复获得应去重 */
+if (st3.relics.length !== 1) err('遗物去重失败: ' + JSON.stringify(st3.relics));
+st3.relics.push('worm_eye');
+const rs = sandbox.relicSum(st3);
+if (rs.startBlock !== 3) err('遗物 startBlock 聚合错误: ' + rs.startBlock);
+if (rs.maxEnergy !== 1 || rs.startLossHp !== 3) err('遗物 boss 效果聚合错误: ' + JSON.stringify(rs));
+if (!sandbox.hasRelic(st3, 'worm_eye') || sandbox.hasRelic(st3, 'watch')) err('hasRelic 判定失败');
+const baseInt = sandbox.checkMod(st3, 'int');
+st3.relics.push('keeper_monocle');
+if (sandbox.checkMod(st3, 'int') !== baseInt + 3) err('单片镜智力检定加值失败: ' + sandbox.checkMod(st3, 'int'));
+if (sandbox.checkMod(Object.assign({}, st3, { relics: [] }), 'cha') !== sandbox.checkMod(st3, 'cha')) err('遗物检定加值不应影响其他属性');
+console.log('  ✓ 遗物 聚合 / 去重 / 检定加值 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');

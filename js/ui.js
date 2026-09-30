@@ -191,6 +191,18 @@ const UI = {
         (gd ? gd.name + ' <small style="color:var(--gold-dim)">' + gd.desc + '</small>' : '<span class="none">—</span>') + '</div>';
     }
 
+    let relicRows = '';
+    const relics = Array.isArray(s.relics) ? s.relics : [];
+    if (!relics.length) {
+      relicRows = '<div class="cp-hint">尚未获得 · 商店与隐秘处藏有星尘遗物</div>';
+    }
+    for (const id of relics) {
+      const rd = DATA.RELICS[id];
+      if (!rd) continue;
+      relicRows += '<div class="gear-row"><span class="relic-icon">' + rd.icon + '</span><b>' + rd.name + '</b>' +
+        '<div class="relic-desc">' + rd.desc + '</div></div>';
+    }
+
     let itemRows = '';
     const itemIds = Object.keys(s.items).filter((k) => s.items[k] > 0);
     if (itemIds.length === 0) itemRows = '<div class="cp-hint">行囊空空</div>';
@@ -227,6 +239,8 @@ const UI = {
       '<div class="cp-hint">🎲 点击属性查看用途 · 武器 +' + gb.atk + ' 攻击 · 护甲 +' + gb.def + ' 护甲值</div></div>' +
 
       '<div class="cp-section"><div class="cp-title">装 备</div>' + gearRows + '</div>' +
+
+      '<div class="cp-section"><div class="cp-title">遗 物' + (relics.length ? '（' + relics.length + '）' : '') + '</div>' + relicRows + '</div>' +
 
       '<div class="cp-section"><div class="cp-title">行 囊</div>' + itemRows + '</div>' +
 
@@ -357,6 +371,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 冒险</b><br>阅读剧情，点击选项推进。<span class="k">🎲 属性检定</span>会掷 20 面骰：检定值 = 骰子 + 属性×2，达到 DC 即成功。力量/敏捷/智力/魅力各有用武之地。</div>' +
       '<div class="help-sec"><b>▸ 卡牌战斗</b><br>每回合获得 <span class="k">3 点行动力</span>，抽 5 张牌。点击卡牌打出：攻击敌方、获取护甲、施加状态。护甲只在本回合内有效。<br>敌人头顶会展示<b>意图</b>（⚔️攻击 / 🛡️防御 / ⬆️强化 / ☠️诅咒），据此制定策略。<br><span class="k">中毒</span>每回合扣血递减 · <span class="k">虚弱</span>输出 ×0.75 · <span class="k">易伤</span>受伤 ×1.5 · <span class="k">力量</span>每次攻击 +N 伤。</div>' +
       '<div class="help-sec"><b>▸ 成长</b><br>战斗胜利获得金币、经验，并从 3 张卡牌中挑选 1 张加入牌组。装备提供永久加成，药水可随时使用。</div>' +
+      '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
       '<div class="help-sec"><b>▸ 快捷键</b><br>战斗中按 <span class="k">1~9</span> 选牌，<span class="k">E</span> 结束回合。剧情点击文字可跳过打字机动画。</div>' +
       '<div class="help-sec"><b>▸ 属性与笔记</b><br>点击左侧面板的属性可查看用途说明。<span class="k">📓 冒险笔记</span>（角色面板下方或菜单）自动记录任务进度与听来的情报线索——迷题的答案往往就藏在笔记里。</div>' +
       '<div class="help-sec" style="color:var(--dim)">游戏会在每个场景自动存档（浏览器本地）。战败可从检查点复活。</div>';

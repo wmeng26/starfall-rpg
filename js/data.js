@@ -1,7 +1,7 @@
 'use strict';
 /* ============================================================
    星坠之谜 — 游戏数据
-   卡牌 / 敌人 / 物品 / 装备 / 商店 / 剧情场景
+   卡牌 / 遗物 / 敌人 / 物品 / 装备 / 商店 / 剧情场景
    ============================================================ */
 const DATA = {};
 
@@ -123,6 +123,31 @@ DATA.ITEMS = {
   antidote:      { id: 'antidote', name: '解毒草', art: '🌿', desc: '清除自身负面状态。（战斗）', use: { cleanse: true }, combatOnly: true, price: 25 },
   star_shard:    { id: 'star_shard', name: '星核碎片', art: '💠', desc: '任务物品。温热，像一颗小小的心脏。', quest: true },
   miner_note:    { id: 'miner_note', name: '矿工的遗嘱', art: '📜', desc: '记着矿坑深处的传闻。', quest: true },
+};
+
+/* ============================ 遗物 ============================
+   星尘遗物：被动生效的稀有物件，无需装备，整局持续有效。
+   效果字段（引擎在各钩子处读取，可多件叠加）:
+     startBlock / startStrength / enemyVuln / startLossHp  战斗开始
+     maxEnergy / energyFirst / drawFirst / turnHeal         回合资源
+     poisonPlus（你的中毒 +N 层）/ thorns（受击反弹 N 点）
+     winHeal / goldPct / xpPct                              战斗胜利
+     check: { stat, v }                                     属性检定加值
+============================================================ */
+DATA.RELICS = {
+  silver_tongue:  { id: 'silver_tongue', name: '银铃舌', icon: '🔔', startBlock: 3, desc: '战斗开始时获得 3 点护甲。聋伯的手艺——铃响之处，雾不敢近。' },
+  star_pouch:     { id: 'star_pouch', name: '星屑香囊', icon: '✨', enemyVuln: 1, desc: '战斗开始时，所有敌人获得 1 层易伤。囊中的星屑仍在发烫。' },
+  wolf_whistle:   { id: 'wolf_whistle', name: '狼骨哨', icon: '🦴', startStrength: 1, desc: '战斗开始时获得 1 层力量。吹响它，就能听见黑松林的冬天。' },
+  herb_pouch:     { id: 'herb_pouch', name: '药婆的草香囊', icon: '🌿', turnHeal: 1, desc: '每个回合开始时恢复 1 点生命。捣药声不紧不慢，像许多年前一样。' },
+  thorn_ring:     { id: 'thorn_ring', name: '荆棘指环', icon: '💍', thorns: 3, desc: '受到攻击伤害时，反弹 3 点伤害给攻击者。荆棘不辨敌我，只认疼痛。' },
+  watch:          { id: 'watch', name: '矿监的怀表', icon: '⏱️', drawFirst: 1, desc: '每场战斗的首回合多抽 1 张牌。表针停在矿难那一刻，却走得出下一秒。' },
+  coin_star:      { id: 'coin_star', name: '坠星铜币', icon: '🪙', goldPct: 25, desc: '战斗获得的金币 +25%。币面上那道划痕，是它从天上落下来的痕迹。' },
+  keeper_monocle: { id: 'keeper_monocle', name: '守塔人的单片镜', icon: '👓', check: { stat: 'int', v: 3 }, desc: '智力检定 +3。镜片后的那只眼睛，读了一百年的星轨。' },
+  bone_flute:     { id: 'bone_flute', name: '低语的骨笛', icon: '🪈', poisonPlus: 1, desc: '你施加的中毒额外 +1 层。笛声很轻，像很多人在同时呼吸。' },
+  wine_flask:     { id: 'wine_flask', name: '六人队的酒壶', icon: '🏺', winHeal: 8, desc: '战斗胜利后恢复 8 点生命。壶底还剩最后一口，他们一直留着，等一个赢了的人。' },
+  map_shard:      { id: 'map_shard', name: '星图残页', icon: '🗺️', xpPct: 25, desc: '战斗获得的经验 +25%。朱砂圈住的地方，比任何课堂都教得多。' },
+  hourglass:      { id: 'hourglass', name: '星辉沙漏', icon: '⏳', energyFirst: 1, desc: '每场战斗的首回合 +1 行动力。沙漏里的光永远流不完——塔的时间没有停过。' },
+  worm_eye:       { id: 'worm_eye', name: '王虫的独眼', icon: '🟣', maxEnergy: 1, startLossHp: 3, desc: '行动力上限 +1；每场战斗开始时失去 3 点生命。它仍在山腹深处注视着你。' },
 };
 
 /* ============================ 敌人 ============================
@@ -349,6 +374,8 @@ DATA.SCENES = {
       { text: '🥋 硬皮甲 —— 55 金币', sub: '护甲 · 护甲值 +2（替换粗布衣）', fx: { gold: -55, gear: 'leather_armor' }, requireGold: 55, show: (s) => s.player.gear.armor !== 'leather_armor', go: 'smith' },
       { text: '📿 力量护符 —— 65 金币', sub: '饰品 · 力量 +1', fx: { gold: -65, gear: 'amulet_pow' }, requireGold: 65, once: 'bought_pow', go: 'smith' },
       { text: '🧤 迅捷护腕 —— 65 金币', sub: '饰品 · 敏捷 +1', fx: { gold: -65, gear: 'amulet_agi' }, requireGold: 65, once: 'bought_agi', go: 'smith' },
+      { text: '✨ 星屑香囊 —— 85 金币', sub: '遗物 · 开战时全体敌人易伤 1 层', fx: { gold: -85, relic: 'star_pouch' }, requireGold: 85, show: (s) => !hasRelic(s, 'star_pouch'), go: 'smith' },
+      { text: '💍 荆棘指环 —— 110 金币', sub: '遗物 · 受击反弹 3 点伤害', fx: { gold: -110, relic: 'thorn_ring' }, requireGold: 110, show: (s) => !hasRelic(s, 'thorn_ring'), go: 'smith' },
       { text: '🂠 卡牌【破甲】—— 80 金币', sub: '加入牌组：1 费 · 4 伤 + 2 易伤', fx: { gold: -80, card: 'pierce' }, requireGold: 80, once: 'bought_pierce', go: 'smith' },
       { text: '↩️ 回到镇中心', go: 'town' },
     ],
@@ -391,6 +418,7 @@ DATA.SCENES = {
     onEnter: (s) => { s.flags.inChimes = true; return null; },
     choices: [
       { text: '🂠 卡牌【清铃音】—— 70 金币', sub: '加入牌组：1 费 · 清除负面状态 + 抽 1 张牌', fx: { gold: -70, card: 'chime' }, requireGold: 70, once: 'bought_chime', go: 'chimes' },
+      { text: '🔔 银铃舌 —— 50 金币', sub: '遗物 · 战斗开始时获得 3 点护甲', fx: { gold: -50, relic: 'silver_tongue' }, requireGold: 50, show: (s) => !hasRelic(s, 'silver_tongue'), go: 'chimes' },
       { text: '📿 守夜风铃 —— 60 金币', sub: '饰品 · 护甲值 +1（铃音结界）', fx: { gold: -60, gear: 'night_chime' }, requireGold: 60, show: (s) => s.player.gear.charm !== 'night_chime', go: 'chimes' },
       { text: '🎧 请聋伯敲一段老铃', sub: '铃音涤荡疲惫 · 恢复 20% 生命', once: 'chime_bless', fx: { healPct: 20 }, go: 'chimes' },
       { text: '❓ 询问风铃的来历', sub: '满屋哑掉的铃，总有个缘故', once: 'asked_chimes', fx: { note: 'chime_lore' }, go: 'chimes' },
@@ -467,11 +495,13 @@ DATA.SCENES = {
         s.player.gold += 45;
         s.items.firebomb = (s.items.firebomb || 0) + 1;
         s.player.gear.charm = 'wolf_fang';
-        msg.push('【获得 45 金币 / 火焰瓶 ×1 / 饰品·狼王獠牙（力量+1）】');
+        s.relics = s.relics || [];
+        if (!hasRelic(s, 'wolf_whistle')) s.relics.push('wolf_whistle');
+        msg.push('【获得 45 金币 / 火焰瓶 ×1 / 饰品·狼王獠牙（力量+1）/ 遗物·狼骨哨】');
       }
       return msg.length ? msg.join('\n') : null;
     },
-    text: '狼群守护的树洞里藏着它们的"家当"：一袋铜币、一瓶火油，还有一枚泛着寒光的巨大獠牙。\n\n雾在树洞后散开——山道尽头，矿坑漆黑的入口已经遥遥在望。',
+    text: '狼群守护的树洞里藏着它们的"家当"：一袋铜币、一瓶火油，还有一枚泛着寒光的巨大獠牙。獠牙旁边，一支骨哨静静躺着——吹响它，整片松林都会屏住呼吸。\n\n雾在树洞后散开——山道尽头，矿坑漆黑的入口已经遥遥在望。',
     choices: [
       { text: '⛏️ 前往矿坑入口', go: 'mine_entrance' },
     ],
@@ -529,6 +559,7 @@ DATA.SCENES = {
       return null;
     },
     choices: [
+      { text: '🌿 药婆的草香囊 —— 55 金币', sub: '遗物 · 每回合开始恢复 1 点生命', fx: { gold: -55, relic: 'herb_pouch' }, requireGold: 55, show: (s) => !hasRelic(s, 'herb_pouch'), go: 'grove_hut' },
       { text: '💊 接下委托，前往林心', sub: '让泉水重新清澈', show: (s) => !s.flags.springDone, go: 'grove_heart_pre' },
       { text: '❓ 询问星坠之夜的事', sub: '老人们总知道些什么', once: 'asked_grove', fx: { note: 'grove_lore' }, go: 'grove_hut' },
       { text: '↩️ 告别，回到林间空地', go: 'grove_path' },
@@ -564,16 +595,18 @@ DATA.SCENES = {
       s.flags.springDone = true;
       s.items.star_dew = (s.items.star_dew || 0) + 1;
       s.deck.push('star_dust');
+      s.relics = s.relics || [];
+      if (!hasRelic(s, 'bone_flute')) s.relics.push('bone_flute');
       Quest.done(s, 'side_grove');
       Note.add(s, 'spring_pure');
       if (!s.player.gear.charm) {
         s.player.gear.charm = 'star_speaker';
-        return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 饰品·星语者徽记（魅力+1）】\n【支线完成：林心的异光】';
+        return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 遗物·低语的骨笛 / 饰品·星语者徽记（魅力+1）】\n【支线完成：林心的异光】';
       }
       s.player.gold += 40;
-      return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 40 金币（谢礼）】\n【支线完成：林心的异光】';
+      return '【获得 星辉露珠 ×1 / 卡牌【星屑飞尘】/ 遗物·低语的骨笛 / 40 金币（谢礼）】\n【支线完成：林心的异光】';
     },
-    text: '低语散尽的瞬间，泉底那点微光浮上水面，碎成满潭星屑。\n\n潭水清冽得能照见树冠——许久没有生物敢在雾隐镇的荒野里，见到这样干净的倒影了。\n\n归途的方向，药草与炊烟的气味隐约传来。',
+    text: '低语散尽的瞬间，泉底那点微光浮上水面，碎成满潭星屑。\n\n潭水清冽得能照见树冠——泉底的淤泥里，躺着一支细小的骨笛，笛孔的排布不似人间手笔。潭水许你把它带走：低语散了，笛声便只为你一人响。\n\n归途的方向，药草与炊烟的气味隐约传来。',
     choices: [
       { text: '🏚️ 回药婆小屋道谢', go: 'grove_hut' },
       { text: '↩️ 返回林间空地', go: 'grove_path' },
@@ -646,8 +679,10 @@ DATA.SCENES = {
         s.flags.secret_room = true;
         s.player.gold += 80;
         s.items.energy_potion = (s.items.energy_potion || 0) + 1;
+        s.relics = s.relics || [];
+        if (!hasRelic(s, 'coin_star')) s.relics.push('coin_star');
         Note.add(s, 'mine_log');
-        return '【获得 80 金币 / 能量药水 ×1】';
+        return '【获得 80 金币 / 能量药水 ×1 / 遗物·坠星铜币】';
       }
       return null;
     },
@@ -716,7 +751,7 @@ DATA.SCENES = {
   seventh_heart: {
     text: '墙后是一个你没料到的洞窟——大得能听见回声。\n\n六顶帐篷塌在洞边，火塘早已冷透。行囊大多空了，角落里却有一只锁箱，完好无损——它没有上锁，像是留给来者的。\n\n洞窟深处的裂缝里垂下无数苍白的须。墙中之物的心跳，在这里响得像战鼓。',
     choices: [
-      { text: '🎁 收拢六人的遗物', sub: '愿他们安息', once: 'seventh_loot', fx: { gold: 90, item: 'big_potion' }, go: 'seventh_heart' },
+      { text: '🎁 收拢六人的遗物', sub: '愿他们安息', once: 'seventh_loot', fx: { gold: 90, item: 'big_potion', relic: 'keeper_monocle' }, go: 'seventh_heart' },
       { text: '⚔️ 面对墙中之物', sub: '头目战 · 墙里的心跳', combat: 'wall_thing', win: 'seventh_win' },
       { text: '↩️ 带着遗物撤退', sub: '有些东西，不该被吵醒', go: 'mine_depths' },
     ],
@@ -727,11 +762,13 @@ DATA.SCENES = {
       if (s.flags.wallDone) return null;
       s.flags.wallDone = true;
       s.deck.push('echo_strike');
+      s.relics = s.relics || [];
+      if (!hasRelic(s, 'wine_flask')) s.relics.push('wine_flask');
       Note.add(s, 'sixth_fate');
       Quest.done(s, 'side_wall');
-      return '【获得 卡牌【六人斩】】\n【支线完成：墙中的心跳】';
+      return '【获得 卡牌【六人斩】/ 遗物·六人队的酒壶】\n【支线完成：墙中的心跳】';
     },
-    text: '墙中之物炸裂成漫天尘屑，六个声音同时叹了口气。\n\n六道残影自尘屑中站起——剑士、弓手、法师……他们朝你一齐颔首，把手中的技艺留在你掌心，随后化光散去。\n\n最深处的裂缝里，第七套行囊叠得整整齐齐。第六人没有死——他放下了剑，自己沿着裂缝走了进去，再没有回头。',
+    text: '墙中之物炸裂成漫天尘屑，六个声音同时叹了口气。\n\n六道残影自尘屑中站起——剑士、弓手、法师……他们朝你一齐颔首，把手中的技艺留在你掌心。最后一名残影把一只旧酒壶放进你的手里——壶底还剩最后一口酒。\n随后，他们化光散去。\n\n最深处的裂缝里，第七套行囊叠得整整齐齐。第六人没有死——他放下了剑，自己沿着裂缝走了进去，再没有回头。',
     choices: [
       { text: '↩️ 返回矿坑一层', go: 'mine_depths' },
     ],
@@ -749,13 +786,15 @@ DATA.SCENES = {
       if (!s.flags.bossDown) {
         s.flags.bossDown = true;
         s.items.star_shard = 1;
+        s.relics = s.relics || [];
+        if (!hasRelic(s, 'worm_eye')) s.relics.push('worm_eye');
         Quest.done(s, 'main_mine');
         Quest.add(s, 'main_tower');
-        return '【获得 任务物品·星核碎片 / 大量经验】';
+        return '【获得 任务物品·星核碎片 / 遗物·王虫的独眼（行动力上限 +1，每战开始失去 3 生命）/ 大量经验】';
       }
       return null;
     },
-    text: '巨虫轰然倒地，激起漫天尘雾。\n\n星核碎片落入你的掌心。它温热，像一颗小小的心脏，与远处古塔的方向遥遥呼应。\n\n轰隆——矿坑开始坍塌。你夺路狂奔，身后巷道接连崩落。',
+    text: '巨虫轰然倒地，激起漫天尘雾。\n\n星核碎片落入你的掌心。它温热，像一颗小小的心脏，与远处古塔的方向遥遥呼应。\n\n而巨虫碎裂的头颅深处，一枚独眼般的晶珠兀自转动——它隔着百丈岩层看了你一眼，然后，把某种沉甸甸的"时间"压进了你的血脉。拿住它，它就是力量；拿不住，它就叫疼。\n\n轰隆——矿坑开始坍塌。你夺路狂奔，身后巷道接连崩落。',
     choices: [
       { text: '🌞 冲回地面', go: 'core_choice' },
     ],
@@ -801,6 +840,7 @@ DATA.SCENES = {
     text: '古塔立于山巅，塔身缠绕着百年常青的黑雾。\n\n塔下，一名斗篷旅人拦住去路，兜帽下只露出下巴一线冷笑：\n\n"——前方是守塔人的领域。要赌命，先备货。"',
     choices: [
       { text: '🍶 大治疗药水 —— 65 金币', sub: '恢复 60 点生命', fx: { gold: -65, item: 'big_potion' }, requireGold: 65, once: 'shop_bp', go: 'tower_gate' },
+      { text: '⏱️ 矿监的怀表 —— 80 金币', sub: '遗物 · 首回合多抽 1 张牌', fx: { gold: -80, relic: 'watch' }, requireGold: 80, show: (s) => !hasRelic(s, 'watch'), go: 'tower_gate' },
       { text: '⚡ 能量药水 —— 50 金币', sub: '战斗中 +2 行动力', fx: { gold: -50, item: 'energy_potion' }, requireGold: 50, once: 'shop_ep', go: 'tower_gate' },
       { text: '🌿 解毒草 —— 25 金币', sub: '战斗中清除负面状态', fx: { gold: -25, item: 'antidote' }, requireGold: 25, once: 'shop_ad', go: 'tower_gate' },
       { text: '🥋 锁子甲 —— 120 金币', sub: '护甲 · 护甲值 +3', fx: { gold: -120, gear: 'chain_mail' }, requireGold: 120, show: (s) => s.player.gear.armor !== 'chain_mail', go: 'tower_gate' },
@@ -823,7 +863,7 @@ DATA.SCENES = {
         success: { text: '壁画描绘着百年前的那一夜：守塔人将影魔钉入塔顶，星核化作锁链。最末一格，他独自坐在祭坛边，在塔门上刻下一行诗。', fx: { xp: 15, note: 'tower_fresco' }, go: 'tower_hall' },
         fail: { text: '星轨的刻线相互缠绕，你只能认出零星几个古字——大意是"锁"与"归还"。', go: 'tower_hall' },
       },
-      { text: '🗝️ 搜查守塔人的遗物', sub: '尘封的壁龛', once: 'hall_loot', fx: { item: 'antidote', gold: 25 }, go: 'tower_hall' },
+      { text: '🗝️ 搜查守塔人的遗物', sub: '尘封的壁龛', once: 'hall_loot', fx: { item: 'antidote', gold: 25, relic: 'map_shard' }, go: 'tower_hall' },
       { text: '🌌 登上环廊的观星台', sub: '古塔的中层 · 藏书室', go: 'tower_archive' },
       { text: '🌀 沿旋梯而上', sub: '星影游荡的中段', go: 'tower_stairs' },
     ],
@@ -872,11 +912,13 @@ DATA.SCENES = {
       if (!s.flags.golemLoot) {
         s.flags.golemLoot = true;
         s.player.gear.weapon = 'star_blade';
-        return '【武器·星辉长剑（攻击伤害 +3，替换旧武器）】';
+        s.relics = s.relics || [];
+        if (!hasRelic(s, 'hourglass')) s.relics.push('hourglass');
+        return '【武器·星辉长剑（攻击伤害 +3，替换旧武器）/ 遗物·星辉沙漏】';
       }
       return null;
     },
-    text: '星轨石像轰然碎裂，散作一地星砂。\n\n碎裂的胸腔里，一柄长剑静静悬浮——剑身的星辉沉淀成实体，刃口流转着百年前的月光。石像守了它一百年，直到等来一个配得上它的手。',
+    text: '星轨石像轰然碎裂，散作一地星砂。\n\n碎裂的胸腔里，一柄长剑静静悬浮——剑身的星辉沉淀成实体，刃口流转着百年前的月光。剑旁立着一座黄铜沙漏，漏中的星屑明明灭灭，却永远流不尽。石像守了它们一百年，直到等来一个配得上它们的手。',
     choices: [
       { text: '🚪 沿旋梯直上塔顶', sub: '塔顶 · 一去不返', go: 'tower_top' },
       { text: '↩️ 退回旋梯中段', go: 'tower_landing' },
@@ -973,6 +1015,7 @@ DATA.ACHIEVEMENTS = {
   chime_heard:   { id: 'chime_heard', icon: '🎐', name: '铃语的听众', desc: '听聋伯讲完风铃的来历。', test: (s) => s.journal.notes.some((n) => n.id === 'chime_lore') },
   veteran:       { id: 'veteran', icon: '🛡️', name: '身经百战', desc: '累计战斗 15 场。', test: (s) => s.stats.battles >= 15 },
   collector:     { id: 'collector', icon: '🂠', name: '牌组收藏家', desc: '牌组达到 20 张。', test: (s) => s.deck.length >= 20 },
+  relic_hunter:  { id: 'relic_hunter', icon: '⚱️', name: '星尘收藏家', desc: '同时持有 4 件星尘遗物。', test: (s) => Array.isArray(s.relics) && s.relics.length >= 4 },
   rich:          { id: 'rich', icon: '💰', name: '小有身家', desc: '同时持有 500 金币。', test: (s) => s.player.gold >= 500 },
   ascendant:     { id: 'ascendant', icon: '⭐', name: '登峰造极', desc: '达到 Lv.8。', test: (s) => s.player.level >= 8 },
   scholar:       { id: 'scholar', icon: '📓', name: '博闻强识', desc: '冒险笔记收集 12 篇。', test: (s) => s.journal.notes.length >= 12 },

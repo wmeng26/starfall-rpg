@@ -59,6 +59,11 @@ function repairSave(st) {
     if (c && Array.isArray(c.deck)) st.deck.push.apply(st.deck, c.deck);
   }
 
+  if (!Array.isArray(st.relics)) st.relics = [];
+  for (let i = st.relics.length - 1; i >= 0; i--) {
+    if (!DATA.RELICS[st.relics[i]]) { dropped.push('遗物 ' + st.relics[i]); st.relics.splice(i, 1); }
+  }
+
   if (!st.items || typeof st.items !== 'object') st.items = {};
   for (const id in st.items) {
     if (!ITEMS[id] || typeof st.items[id] !== 'number' || st.items[id] <= 0) { delete st.items[id]; dropped.push('物品 ' + id); }
@@ -131,6 +136,7 @@ function newGameState(clsId) {
     },
     deck: c.deck.slice(),
     items: { potion: 2 },
+    relics: [],
     flags: {},
     journal: { quests: [], notes: [] },
     stats: { battles: 0, kills: 0, checks: 0 },
@@ -194,6 +200,26 @@ function gearBonus(state) {
   return { atk, def };
 }
 
+/* —— 遗物 —— */
+function hasRelic(state, id) {
+  return Array.isArray(state.relics) && state.relics.indexOf(id) >= 0;
+}
+
+/* 遗物数值效果聚合（同字段多件叠加），供战斗引擎各钩子读取 */
+function relicSum(state) {
+  const out = {};
+  if (!Array.isArray(state.relics)) return out;
+  for (const id of state.relics) {
+    const r = DATA.RELICS[id];
+    if (!r) continue;
+    for (const k of ['startBlock', 'startStrength', 'enemyVuln', 'startLossHp', 'maxEnergy', 'energyFirst',
+                     'drawFirst', 'turnHeal', 'poisonPlus', 'thorns', 'winHeal', 'goldPct', 'xpPct']) {
+      if (r[k]) out[k] = (out[k] || 0) + r[k];
+    }
+  }
+  return out;
+}
+
 /* —— 含装备加成的属性（用于检定） —— */
 function effStat(state, stat) {
   let v = state.player.stats[stat] || 0;
@@ -207,8 +233,17 @@ function effStat(state, stat) {
   return v;
 }
 
-/* 检定加值：属性 ×2 */
-function checkMod(state, stat) { return effStat(state, stat) * 2; }
+/* 检定加值：属性 ×2，另计遗物的检定加值 */
+function checkMod(state, stat) {
+  let v = effStat(state, stat) * 2;
+  if (Array.isArray(state.relics)) {
+    for (const id of state.relics) {
+      const r = DATA.RELICS[id];
+      if (r && r.check && r.check.stat === stat) v += r.check.v;
+    }
+  }
+  return v;
+}
 
 /* —— 效果结算。fx: {gold, hp, healPct, item, useItem, card, gear, flag, flag2:{k:v}, stat:{k:v}, xp} —— */
 function applyEffects(state, fx) {
@@ -248,6 +283,18 @@ function applyEffects(state, fx) {
     if (gd) {
       p.gear[gd.slot] = gd.id;
       UI.log('⚔️ 装备 ' + gd.name, 'gain');
+    }
+  }
+  if (fx.relic) {
+    if (!Array.isArray(state.relics)) state.relics = [];
+    if (!hasRelic(state, fx.relic)) {
+      state.relics.push(fx.relic);
+      const rd = DATA.RELICS[fx.relic];
+      if (rd) {
+        UI.log('⚱️ 获得遗物【' + rd.name + '】—— ' + rd.desc, 'gain');
+        UI.toast('⚱️ 遗物：' + rd.name, 'good');
+        Sfx.play('coin');
+      }
     }
   }
   if (fx.flag) state.flags[fx.flag] = true;

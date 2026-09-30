@@ -33,7 +33,7 @@ const fakeEl = () => ({
 });
 const store = {};
 const sb = new Function('document', 'window', 'localStorage', 'Main',
-  ALL_JS + '\n;return { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded };'
+  ALL_JS + '\n;return { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded, hasRelic, relicSum };'
 )(
   {
     querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
@@ -47,7 +47,7 @@ const sb = new Function('document', 'window', 'localStorage', 'Main',
   },
   { showDeath() {}, showTitle() {} }
 );
-const { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded } = sb;
+const { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded, hasRelic, relicSum } = sb;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /* 临时静音 UI 输出，避免刷屏 */
@@ -198,6 +198,16 @@ async function main() {
     check(r.repaired.length === 0, '正常存档不产生自愈记录');
     check(r.player.gold === 123 && r.deck.includes('pierce') && r.items.potion === 5, '正常存档内容完整保留');
     check(r.deck.length === DATA.CLASSES.warrior.deck.length + 1, '正常存档牌组数量不变');
+  }
+
+  /* 12.5 正常存档的遗物列表完整保留 */
+  {
+    const st = baseSave();
+    st.relics = ['silver_tongue', 'worm_eye'];
+    putSave(st);
+    const r = Save.read();
+    check(JSON.stringify(r.relics) === '["silver_tongue","worm_eye"]', '正常存档遗物列表完整保留');
+    check(r.repaired.length === 0, '有效遗物不产生自愈记录');
   }
 
   console.log('== 战斗回合边界 ==');
@@ -591,10 +601,158 @@ async function main() {
     delete store['starfall_rpg_achv_v1'];
   }
 
+  console.log('== 星尘遗物 ==');
+
+  /* 38. 失效遗物被剔除；旧存档缺失的 relics 字段补齐 */
+  {
+    const st = baseSave();
+    st.relics = ['silver_tongue', 'RELIC_GONE'];
+    putSave(st);
+    let r = Save.read();
+    check(JSON.stringify(r.relics) === '["silver_tongue"]', '失效遗物已被剔除');
+    check(r.repaired.some((msg) => msg.includes('RELIC_GONE')), '自愈记录包含失效遗物');
+
+    const st2 = baseSave();
+    delete st2.relics;
+    putSave(st2);
+    r = Save.read();
+    check(Array.isArray(r.relics) && r.relics.length === 0, '旧存档缺失的 relics 已补齐为空数组');
+  }
+
+  /* 39. fx.relic 去重；relicSum 聚合；hasRelic 判定 */
+  {
+    G.state = newGameState('ranger');
+    applyEffects(G.state, { relic: 'silver_tongue' });
+    applyEffects(G.state, { relic: 'silver_tongue' });
+    check(G.state.relics.length === 1, '重复获得遗物被去重');
+    G.state.relics.push('worm_eye');
+    const rs = relicSum(G.state);
+    check(rs.startBlock === 3 && rs.maxEnergy === 1 && rs.startLossHp === 3,
+      'relicSum 聚合各效果字段（' + JSON.stringify(rs) + '）');
+    check(hasRelic(G.state, 'worm_eye') && !hasRelic(G.state, 'watch'), 'hasRelic 判定正确');
+  }
+
+  /* 40. 单片镜：智力检定加值 +3，不影响其他属性 */
+  {
+    G.state = newGameState('warrior');
+    const baseInt = checkMod(G.state, 'int');
+    const baseCha = checkMod(G.state, 'cha');
+    G.state.relics = ['keeper_monocle'];
+    check(checkMod(G.state, 'int') === baseInt + 3, '单片镜使智力检定加值 ' + baseInt + ' → ' + (baseInt + 3));
+    check(checkMod(G.state, 'cha') === baseCha, '单片镜不影响魅力检定');
+  }
+
+  /* 41. 开局钩子：护甲 / 力量 / 首回合行动力与抽牌 / 每回合回血 */
+  {
+    G.state = newGameState('warrior');
+    G.state.player.hp = G.state.player.maxHp - 5;
+    G.state.relics = ['silver_tongue', 'wolf_whistle', 'hourglass', 'watch', 'herb_pouch'];
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    check(C.player.block === 3, '银铃舌：开局 3 点护甲（实际 ' + C.player.block + '）');
+    check(C.player.statuses.strength === 1, '狼骨哨：开局 1 层力量');
+    check(C.energy === 4 && C.maxEnergy === 3, '星辉沙漏：首回合行动力 4（上限 3）');
+    check(C.hand.length === 6, '矿监的怀表：首回合抽 6 张（实际 ' + C.hand.length + '）');
+    check(G.state.player.hp === G.state.player.maxHp - 4, '草香囊：回合开始回复 1 点（-5 → -4）');
+    Combat.C = null;
+  }
+
+  /* 42. 王虫的独眼：行动力上限 +1 与开局自伤 */
+  {
+    G.state = newGameState('mage');
+    G.state.relics = ['worm_eye'];
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    check(C.maxEnergy === 4 && C.energy === 4, '王虫的独眼：行动力上限 3 → 4');
+    check(G.state.player.hp === G.state.player.maxHp - 3, '王虫的独眼：开局失去 3 点生命');
+    Combat.C = null;
+  }
+
+  /* 43. 荆棘指环：反弹伤害，反弹致死计入击杀 */
+  {
+    G.state = newGameState('warrior');
+    G.state.relics = ['thorn_ring'];
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    const e = C.enemies[0];
+    e.hp = 100; e.maxHp = 100;
+    const hp0 = G.state.player.hp, e0 = e.hp;
+    await Combat.applyPlayerDamage(6, '测试挥击', e);
+    check(G.state.player.hp === hp0 - 6, '荆棘指环不减免所受伤害');
+    check(e.hp === e0 - 3, '荆棘指环反弹 3 点（' + e0 + ' → ' + e.hp + '）');
+    e.hp = 2;
+    await Combat.applyPlayerDamage(6, '测试挥击', e);
+    check(e.hp === 0 && G.state.stats.kills === 1, '反弹致死计入击杀数');
+    Combat.C = null;
+  }
+
+  /* 44. 低语的骨笛：玩家施加的中毒额外 +1 层 */
+  {
+    G.state = newGameState('ranger');
+    G.state.relics = ['bone_flute'];
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    const e = C.enemies[0];
+    e.hp = 999; e.maxHp = 999;
+    C.hand = ['poison_arrow']; C.energy = 3;
+    await quiet(300);
+    await Combat.playCard(0, e.uid);
+    check(e.statuses.poison === 4, '骨笛：淬毒箭中毒 3+1=4 层（实际 ' + e.statuses.poison + '）');
+    Combat.C = null;
+  }
+
+  /* 45. 胜利钩子：金币 +25% / 胜利回血 8 */
+  {
+    G.state = newGameState('warrior');
+    G.state.relics = ['coin_star', 'wine_flask'];
+    G.state.player.hp = G.state.player.maxHp - 30;
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.enemies[0].hp = 1;
+    C.hand = ['strike']; C.energy = 3;
+    await Combat.playCard(0, C.enemies[0].uid);
+    await quiet(900);
+    check(Combat.C && Combat.C.over && Combat.C.rewards, '胜利结算完成');
+    check(G.state.player.gold === 30 + Combat.C.rewards.gold,
+      '坠星铜币：金币 +25% 后入账一致（+' + Combat.C.rewards.gold + '）');
+    check(G.state.player.hp === G.state.player.maxHp - 30 + 8,
+      '六人队的酒壶：胜利回复 8 点（实际 +' + (G.state.player.hp - (G.state.player.maxHp - 30)) + '）');
+    Combat.C = null;
+  }
+
+  /* 46. 成就「星尘收藏家」与各场景遗物发放 */
+  {
+    G.state = newGameState('warrior');
+    G.state.relics = ['silver_tongue', 'wolf_whistle', 'coin_star', 'watch'];
+    Achieve.check(G.state);
+    check(Achieve.has('relic_hunter'), '持有 4 件遗物解锁「星尘收藏家」');
+
+    const s1 = newGameState('mage');
+    DATA.SCENES.forest_treasure.onEnter(s1);
+    check(hasRelic(s1, 'wolf_whistle'), '狼群树洞发放狼骨哨');
+    const s2 = newGameState('mage');
+    DATA.SCENES.secret_room.onEnter(s2);
+    check(hasRelic(s2, 'coin_star'), '矿监私库发放坠星铜币');
+    const s3 = newGameState('mage');
+    DATA.SCENES.wisp_win.onEnter(s3);
+    check(hasRelic(s3, 'bone_flute'), '泉眼净化发放低语的骨笛');
+    const s4 = newGameState('mage');
+    DATA.SCENES.golem_win.onEnter(s4);
+    check(hasRelic(s4, 'hourglass'), '星轨石像发放星辉沙漏');
+    const s5 = newGameState('mage');
+    DATA.SCENES.worm_win.onEnter(s5);
+    check(hasRelic(s5, 'worm_eye'), '矿坑之王发放王虫的独眼');
+    const s6 = newGameState('mage');
+    DATA.SCENES.seventh_win.onEnter(s6);
+    check(hasRelic(s6, 'wine_flask'), '墙中之物发放六人队的酒壶');
+    Achieve._set = null;
+    delete store['starfall_rpg_achv_v1'];
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 / 成就系统 校验全部通过（37 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 / 成就系统 / 星尘遗物 校验全部通过（46 组）');
   process.exit(0);
 }
 

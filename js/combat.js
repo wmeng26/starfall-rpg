@@ -49,13 +49,15 @@ const Combat = {
       };
     });
 
+    const R = relicSum(G.state);
     this.C = {
       enemies,
       player: { block: 0, statuses: {} },
       hand: [], draw: shuffle(G.state.deck.slice()), discard: [],
-      energy: 3, maxEnergy: 3, turn: 0,
+      energy: 3 + (R.maxEnergy || 0), maxEnergy: 3 + (R.maxEnergy || 0), turn: 0,
       busy: true, over: false,
       selected: -1, targetingItem: null,
+      relic: R,
       winScene: winScene || 'town',
       rewards: null,
     };
@@ -92,6 +94,37 @@ const Combat = {
     const p = G.state.player;
     C.player.block = 0;
     C.energy = C.maxEnergy;
+    const R = C.relic || {};
+
+    /* 遗物：每回合开始回复（药婆的草香囊） */
+    if (R.turnHeal && p.hp > 0 && p.hp < p.maxHp) {
+      const amt = Math.min(R.turnHeal, p.maxHp - p.hp);
+      p.hp += amt;
+      UI.float($('#p-avatar'), '+' + amt, 'heal');
+      UI.log('🌿 遗物恢复 ' + amt + ' 点生命', 'gain');
+    }
+
+    /* 遗物：战斗首回合的一次性效果 */
+    if (C.turn === 1) {
+      if (R.energyFirst) C.energy += R.energyFirst;
+      if (R.startLossHp) {
+        p.hp = Math.max(0, p.hp - R.startLossHp);
+        UI.float($('#p-avatar'), '-' + R.startLossHp, 'dmg');
+        UI.log('🩸 遗物【王虫的独眼】索取了 ' + R.startLossHp + ' 点生命', 'battle');
+      }
+      if (R.startBlock) {
+        C.player.block += R.startBlock;
+        UI.log('🔔 遗物：获得 ' + R.startBlock + ' 点护甲', 'gain');
+      }
+      if (R.startStrength) this.addStatus(C.player, { strength: R.startStrength });
+      if (R.enemyVuln) {
+        for (const e of C.enemies) {
+          if (e.hp > 0) this.addStatus(e, { vuln: R.enemyVuln });
+        }
+        UI.log('✨ 星屑灼目：所有敌人获得 ' + R.enemyVuln + ' 层易伤', 'gain');
+      }
+      if (p.hp <= 0) { this.renderAll(); this.lose(); return; }
+    }
 
     /* 玩家中毒结算 */
     if (C.player.statuses.poison) {
@@ -111,7 +144,7 @@ const Combat = {
       e.intent = this.pickMove(e);
     }
 
-    this.drawCards(5);
+    this.drawCards(5 + (C.turn === 1 ? (R.drawFirst || 0) : 0));
     C.busy = false;
     this.renderAll();
   },
@@ -218,14 +251,20 @@ const Combat = {
       }
     }
 
-    /* 目标状态 */
+    /* 目标状态（低语的骨笛：玩家施加的中毒额外 +N 层） */
+    const boostPoison = (st) => {
+      if (!(C.relic && C.relic.poisonPlus) || !st.poison) return st;
+      const st2 = Object.assign({}, st);
+      st2.poison += C.relic.poisonPlus;
+      return st2;
+    };
     if (fx.statusEnemy && target && target.hp > 0) {
-      this.addStatus(target, fx.statusEnemy);
+      this.addStatus(target, boostPoison(fx.statusEnemy));
       this.renderAll();
     }
     /* 全体敌人状态 */
     if (fx.statusAllEnemy) {
-      for (const e of C.enemies.filter((x) => x.hp > 0)) this.addStatus(e, fx.statusAllEnemy);
+      for (const e of C.enemies.filter((x) => x.hp > 0)) this.addStatus(e, boostPoison(fx.statusAllEnemy));
       this.renderAll();
     }
     /* 自身状态 / 护甲 / 恢复 / 抽牌 / 行动力 */
@@ -394,7 +433,7 @@ const Combat = {
         for (let i = 0; i < times; i++) {
           if (!G.state || C.over || G.state.player.hp <= 0) break;
           const dmg = this.calcDmg(move.dmg, e.statuses, C.player.statuses);
-          await this.applyPlayerDamage(dmg, e.name);
+          await this.applyPlayerDamage(dmg, e.name, e);
           await sleep(300);
         }
       }
@@ -431,7 +470,7 @@ const Combat = {
     this.startPlayerTurn();
   },
 
-  async applyPlayerDamage(dmg, sourceName) {
+  async applyPlayerDamage(dmg, sourceName, attacker) {
     const C = this.C;
     if (!C || !G.state) return;
     let rest = dmg;
@@ -448,6 +487,16 @@ const Combat = {
       UI.log('💢 ' + sourceName + ' 对你造成 ' + rest + ' 点伤害', 'battle');
     } else if (dmg > 0) {
       Sfx.play('block');
+    }
+    /* 遗物：荆棘指环反弹（无视护甲，直接扣生命） */
+    if (dmg > 0 && attacker && attacker.hp > 0 && C.relic && C.relic.thorns) {
+      attacker.hp = Math.max(0, attacker.hp - C.relic.thorns);
+      UI.float(document.querySelector('[data-uid="' + attacker.uid + '"]'), '-' + C.relic.thorns + '(刺)', 'dmg');
+      UI.log('🌵 荆棘指环反弹 ' + C.relic.thorns + ' 点伤害给 ' + attacker.name, 'battle');
+      if (attacker.hp <= 0) {
+        G.state.stats.kills += 1;
+        UI.log('💀 ' + attacker.name + ' 被荆棘刺死了', 'battle');
+      }
     }
     this.renderAll();
     UI.renderChar();
@@ -470,9 +519,19 @@ const Combat = {
       gold += range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
       xp += base.xp || 10;
     }
+    const R = C.relic || {};
+    if (R.goldPct) {
+      gold = Math.round(gold * (1 + R.goldPct / 100));
+      UI.log('🪙 遗物：金币 +25%', 'gain');
+    }
+    if (R.xpPct) {
+      xp = Math.round(xp * (1 + R.xpPct / 100));
+      UI.log('🗺️ 遗物：经验 +25%', 'gain');
+    }
     G.state.player.gold += gold;
     gainXp(G.state, xp);
     UI.log('💰 战利品 ' + gold + ' 金币', 'gain');
+    if (R.winHeal) this.healPlayer(R.winHeal);
     UI.renderHud();
     Achieve.check(G.state);
 
@@ -653,8 +712,15 @@ const Combat = {
     });
     html += '</div>';
 
+    let relicChips = '';
+    for (const id of (G.state.relics || [])) {
+      const rd = DATA.RELICS[id];
+      if (rd) relicChips += '<span class="relic-chip" title="' + rd.name + '：' + rd.desc + '">' + rd.icon + '</span>';
+    }
+
     html +=
       '<div class="c-controls">' +
+      (relicChips ? '<span class="pile-chip relic-chips">' + relicChips + '</span>' : '') +
       '<span class="pile-chip">🂠 抽牌堆 ' + C.draw.length + '</span>' +
       '<span class="pile-chip">🗑 弃牌堆 ' + C.discard.length + '</span>' +
       '<span class="pile-chip">回目 ' + C.turn + '</span>' +
