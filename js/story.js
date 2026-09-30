@@ -12,6 +12,13 @@ const Story = {
     const scene = DATA.SCENES[id];
     if (!scene) { console.error('场景不存在: ' + id); return; }
 
+    /* 文本在 onEnter 之前求值：onEnter 常用于记录"已到访"之类的状态，
+       若在其之后取文本，场景自己的首次/再次分支就永远读不到"进入前"的状态。 */
+    const rawText = scene.text;
+    const text = G.state
+      ? ((typeof rawText === 'function') ? rawText(G.state) : rawText)
+      : (typeof rawText === 'function' ? '' : rawText);
+
     let extra = null;
     if (scene.onEnter && G.state) {
       const r = scene.onEnter(G.state);
@@ -31,7 +38,6 @@ const Story = {
       Save.write(G.state);
     }
 
-    const text = (typeof scene.text === 'function') ? scene.text(G.state) : scene.text;
     const full = extra ? (extra + '\n\n' + text) : text;
     UI.typewriter($('#scene-text'), full, () => this.renderChoices(scene));
   },

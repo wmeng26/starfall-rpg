@@ -24,14 +24,64 @@ const Save = {
       if (!raw) return null;
       const st = JSON.parse(raw);
       if (!st || !st.player || !st.scene) return null;
-      if (!st.journal) st.journal = { quests: [], notes: [] }; /* 旧存档兼容 */
-      return st;
+      return repairSave(st);
     } catch (e) { return null; }
   },
   clear() {
     try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
   },
 };
+
+/* —— 存档自愈 ——
+   版本更新后，旧存档里可能残留已被删除/改名的卡牌、装备、物品或场景 ID。
+   这些悬空引用会让牌组弹窗、角色面板、奖励结算直接抛 TypeError，
+   因此在读档时就地清理，并补齐缺失的字段。 */
+function repairSave(st) {
+  const CARDS = DATA.CARDS, GEAR = DATA.GEAR, ITEMS = DATA.ITEMS;
+  const p = st.player;
+  const dropped = [];
+  st.repaired = dropped;
+
+  if (!p.stats || typeof p.stats !== 'object') p.stats = { pow: 1, agi: 1, int: 1, cha: 1 };
+  if (!p.gear || typeof p.gear !== 'object') p.gear = {};
+  for (const slot of ['weapon', 'armor', 'charm']) {
+    const id = p.gear[slot];
+    if (id && (!GEAR[id] || GEAR[id].slot !== slot)) { delete p.gear[slot]; dropped.push('装备 ' + id); }
+  }
+  if (typeof p.gold !== 'number' || !isFinite(p.gold)) p.gold = 0;
+
+  if (!Array.isArray(st.deck)) st.deck = [];
+  for (let i = st.deck.length - 1; i >= 0; i--) {
+    if (!CARDS[st.deck[i]]) { dropped.push('卡牌 ' + st.deck[i]); st.deck.splice(i, 1); }
+  }
+  if (!st.deck.length) {
+    const c = DATA.CLASSES[p.cls];
+    if (c && Array.isArray(c.deck)) st.deck.push.apply(st.deck, c.deck);
+  }
+
+  if (!st.items || typeof st.items !== 'object') st.items = {};
+  for (const id in st.items) {
+    if (!ITEMS[id] || typeof st.items[id] !== 'number' || st.items[id] <= 0) { delete st.items[id]; dropped.push('物品 ' + id); }
+  }
+
+  if (!st.flags || typeof st.flags !== 'object') st.flags = {};
+  if (!st.journal || typeof st.journal !== 'object') st.journal = { quests: [], notes: [] };
+  if (!Array.isArray(st.journal.quests)) st.journal.quests = [];
+  if (!Array.isArray(st.journal.notes)) st.journal.notes = [];
+  st.journal.quests = st.journal.quests.filter((q) => q && DATA.QUESTS[q.id]);
+  st.journal.notes = st.journal.notes.filter((n) => n && DATA.NOTES[n.id]);
+  if (!p.level || p.level < 1) p.level = 1;
+  if (!st.stats || typeof st.stats !== 'object') st.stats = { battles: 0, kills: 0, checks: 0 };
+
+  if (!p.maxHp || p.maxHp < 1) p.maxHp = 1;
+  if (typeof p.hp !== 'number' || p.hp < 1) p.hp = p.maxHp;
+  if (p.hp > p.maxHp) p.hp = p.maxHp;
+
+  /* 场景失效则退回序章，避免读档后卡在白屏 */
+  if (!DATA.SCENES[st.scene]) { dropped.push('场景 ' + st.scene); st.scene = 'prologue'; }
+
+  return st;
+}
 
 /* —— 新角色 —— */
 function newGameState(clsId) {
@@ -51,6 +101,7 @@ function newGameState(clsId) {
     flags: {},
     journal: { quests: [], notes: [] },
     stats: { battles: 0, kills: 0, checks: 0 },
+    repaired: [],
   };
   return state;
 }

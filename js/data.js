@@ -273,7 +273,10 @@ DATA.SCENES = {
   },
 
   smith: {
-    text: '炉火映红半面墙。铁匠布洛克头也不抬：\n\n"外乡人？星坠之后来的人，你是第七个。前六个……嗯，自己看货吧。"',
+    /* 文本在 onEnter 之前求值，因此这里读到的是"本次进入之前"的状态 */
+    text: (s) => s.flags.inSmith
+      ? '炉火还是那么旺。布洛克把锤子搁在砧上，甩了甩手腕：\n\n"又来了？货都摆着，自己看。钱货两清——别跟我聊星坠的事，我这把老骨头还想多活几年。"'
+      : '炉火映红半面墙。铁匠布洛克头也不抬：\n\n"外乡人？星坠之后来的人，你是第七个。前六个……嗯，自己看货吧。"',
     onEnter: (s) => { s.flags.inSmith = true; },
     choices: [
       { text: '🧪 治疗药水 —— 30 金币', sub: '恢复 25 点生命', fx: { gold: -30, item: 'potion' }, requireGold: 30, go: 'smith' },
@@ -539,7 +542,7 @@ DATA.SCENES = {
         text: '🧘 尝试净化它', sub: '🎲 智力检定 · DC 14',
         check: { stat: 'int', dc: 14 },
         success: { text: '你以百年前的净化咒文为引，月光为砥。黑雾如潮水般从碎片中退去——它变得澄澈，像一小片凝固的星空。', fx: { flag2: { core: 'pure' }, card: 'purify', healPct: 100 }, go: 'tower_gate' },
-        fail: { text: '黑雾顺着指尖倒灌而入！你甩手斩断联结，碎片跌在草叶间，微微发烫。（生命 -12）', fx: { hp: -12, flag2: { core: 'pure' }, card: 'purify' }, go: 'tower_gate' },
+        fail: { text: '黑雾顺着指尖倒灌而入！你咬碎牙关，用血肉做引、以剧痛为砥，硬生生把整片黑雾从碎片里逼了出去——碎片终究是澄澈了，只是你手臂上多了一道再也褪不掉的焦痕。（生命 -12）', fx: { hp: -12, flag2: { core: 'pure' }, card: 'purify' }, go: 'tower_gate' },
       },
       { text: '🩸 吸收它的力量', sub: '禁忌之力', go: 'absorb_confirm' },
       { text: '🕊️ 封存碎片，交回镇上', sub: '就此归乡', go: 'peace_confirm' },

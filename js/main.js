@@ -63,14 +63,7 @@ const Main = {
       Story.goto('intro');
     };
     const cont = $('#t-continue');
-    if (cont) cont.onclick = () => {
-      Sfx.play('click');
-      const st = Save.read();
-      if (!st) { UI.toast('存档读取失败', 'bad'); return; }
-      G.state = st;
-      UI.log('✦ 读取存档：' + DATA.CLASSES[st.player.cls].name + ' Lv.' + st.player.level, 'sys');
-      Story.goto(st.scene);
-    };
+    if (cont) cont.onclick = () => { Sfx.play('click'); this.loadSave('读取存档'); };
     $('#t-help').onclick = () => { Sfx.play('click'); UI.helpModal(); };
     const del = $('#t-del');
     if (del) del.onclick = () => {
@@ -78,6 +71,24 @@ const Main = {
       UI.toast('存档已删除', 'good');
       this.showTitle();
     };
+  },
+
+  /* ============ 读档（含自愈提示） ============ */
+  loadSave(tag) {
+    const st = Save.read();
+    if (!st) { UI.toast('存档读取失败', 'bad'); return false; }
+    if (!DATA.CLASSES[st.player.cls]) {
+      UI.toast('存档职业已失效，无法继续', 'bad');
+      return false;
+    }
+    G.state = st;
+    UI.log('✦ ' + tag + '：' + DATA.CLASSES[st.player.cls].name + ' Lv.' + st.player.level, 'sys');
+    if (st.repaired && st.repaired.length) {
+      st.repaired.forEach((msg) => UI.log('🛠 存档自愈：已移除失效的 ' + msg, 'sys'));
+      UI.toast('🛠 存档已修复 ' + st.repaired.length + ' 处失效内容', 'bad');
+    }
+    Story.goto(st.scene);
+    return true;
   },
 
   /* ============ 移动端角色面板抽屉 ============ */
@@ -144,12 +155,8 @@ const Main = {
       '</div>';
     const retry = $('#d-retry');
     if (retry) retry.onclick = () => {
-      const st = Save.read();
-      if (!st) { this.showTitle(); return; }
       Sfx.play('click');
-      G.state = st;
-      UI.log('✦ 从检查点复活', 'sys');
-      Story.goto(st.scene);
+      if (!this.loadSave('从检查点复活')) this.showTitle();
     };
     $('#d-title').onclick = () => this.showTitle();
   },
