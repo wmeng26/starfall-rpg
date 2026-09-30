@@ -97,6 +97,7 @@ const checkFx = (sid, fx, tag) => {
   if (!fx) return;
   if (fx.card && !CARDS[fx.card]) err('场景 ' + sid + ' ' + tag + 'fx.card 未知: ' + fx.card);
   if (fx.item && !ITEMS[fx.item]) err('场景 ' + sid + ' ' + tag + 'fx.item 未知: ' + fx.item);
+  if (fx.useItem && !ITEMS[fx.useItem]) err('场景 ' + sid + ' ' + tag + 'fx.useItem 未知: ' + fx.useItem);
   if (fx.gear && !GEAR[fx.gear]) err('场景 ' + sid + ' ' + tag + 'fx.gear 未知: ' + fx.gear);
   if (fx.note && !DATA.NOTES[fx.note]) err('场景 ' + sid + ' ' + tag + 'fx.note 未知: ' + fx.note);
   if (fx.quest && !DATA.QUESTS[fx.quest]) err('场景 ' + sid + ' ' + tag + 'fx.quest 未知: ' + fx.quest);

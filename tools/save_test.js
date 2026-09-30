@@ -462,10 +462,48 @@ async function main() {
     Combat.C = null;
   }
 
+  console.log('== 第七巷 ==');
+
+  /* 32. 六人斩：4 段攻击（含武器加成） */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.busy = false;
+    const e = C.enemies[0];
+    e.hp = 999; e.maxHp = 999;
+    const per = 4 + gearBonus(G.state).atk;
+    C.hand = ['echo_strike']; C.energy = 3;
+    await Combat.playCard(0, e.uid);
+    check(e.hp === 999 - per * 4, '六人斩造成 4×' + per + ' 点伤害（999→' + e.hp + '）');
+    Combat.C = null;
+  }
+
+  /* 33. 第七巷：useItem 消耗物品 + 任务/奖励一次性 */
+  {
+    const s = newGameState('mage');
+    DATA.SCENES.seventh_tunnel.onEnter(s);
+    check(s.journal.quests.some((q) => q.id === 'side_wall' && q.status === 'active'), '第七巷入口接取支线「墙中的心跳」');
+
+    applyEffects(s, { useItem: 'firebomb' });
+    check(!('firebomb' in s.items), 'useItem 对不存在的物品安全无操作');
+    s.items.firebomb = 1;
+    applyEffects(s, { useItem: 'firebomb' });
+    check(!('firebomb' in s.items), 'useItem 消耗最后一个火焰瓶后移除条目');
+    s.items.firebomb = 2;
+    applyEffects(s, { useItem: 'firebomb' });
+    check(s.items.firebomb === 1, 'useItem 递减火焰瓶数量 2→1');
+
+    DATA.SCENES.seventh_win.onEnter(s);
+    check(s.deck.includes('echo_strike') && s.journal.notes.some((n) => n.id === 'sixth_fate'), '击杀墙中之物获得【六人斩】与笔记');
+    check(s.journal.quests.find((q) => q.id === 'side_wall').status === 'done', '支线「墙中的心跳」已完成');
+    check(DATA.SCENES.seventh_win.onEnter(s) === null, '第七巷奖励只发放一次');
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林支线 / 古塔内部 校验全部通过（31 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 校验全部通过（33 组）');
   process.exit(0);
 }
 

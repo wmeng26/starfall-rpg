@@ -177,7 +177,7 @@ function effStat(state, stat) {
 /* 检定加值：属性 ×2 */
 function checkMod(state, stat) { return effStat(state, stat) * 2; }
 
-/* —— 效果结算。fx: {gold, hp, healPct, item, card, gear, flag, flag2:{k:v}, stat:{k:v}, xp} —— */
+/* —— 效果结算。fx: {gold, hp, healPct, item, useItem, card, gear, flag, flag2:{k:v}, stat:{k:v}, xp} —— */
 function applyEffects(state, fx) {
   if (!fx) return;
   const p = state.player;
@@ -197,6 +197,14 @@ function applyEffects(state, fx) {
   if (fx.item) {
     state.items[fx.item] = (state.items[fx.item] || 0) + 1;
     UI.log('🎁 获得 ' + DATA.ITEMS[fx.item].name, 'gain');
+  }
+  if (fx.useItem) {
+    const n = state.items[fx.useItem] || 0;
+    if (n > 0) {
+      state.items[fx.useItem] = n - 1;
+      if (state.items[fx.useItem] <= 0) delete state.items[fx.useItem];
+      UI.log('🔥 消耗 ' + DATA.ITEMS[fx.useItem].name, 'battle');
+    }
   }
   if (fx.card) {
     state.deck.push(fx.card);

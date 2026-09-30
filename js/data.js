@@ -85,6 +85,7 @@ DATA.CARDS = {
   star_dust:      { id: 'star_dust', name: '星屑飞尘', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'all', fx: { dmgAll: 5, statusAllEnemy: { poison: 1 } }, desc: '对所有敌人造成 5 点伤害，给予 1 层中毒。' },
   star_blessing:  { id: 'star_blessing', name: '星辰庇佑', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 6, heal: 4 }, desc: '获得 6 点护甲，恢复 4 点生命。' },
   meteor:         { id: 'meteor', name: '陨星术', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'all', fx: { dmgAll: 11 }, desc: '召引天火，对所有敌人造成 11 点伤害。' },
+  echo_strike:    { id: 'echo_strike', name: '六人斩', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'enemy', fx: { dmg: 4, times: 4 }, desc: '六道残影与你并肩挥击，造成 4 点伤害，共 4 次。' },
   purify:         { id: 'purify', name: '净化之光', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { cleanse: true, heal: 5 }, desc: '清除自身所有负面状态，恢复 5 点生命。' },
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
   mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
@@ -203,6 +204,13 @@ DATA.ENEMIES = {
     { name: '引力牵引', toPlayer: { weak: 1 }, w: 2 },
     { name: '碎星击', dmg: 5, times: 2, w: 1 },
   ]},
+  /* —— 第七巷 —— */
+  wall_thing: { id: 'wall_thing', name: '墙中之物', art: '🫀', hp: 68, xp: 65, gold: [50, 70], boss: true, moves: [
+    { name: '吞噬之口', dmg: 10, w: 3 },
+    { name: '须蔓乱舞', dmg: 4, times: 2, w: 2 },
+    { name: '摄心低语', toPlayer: { weak: 1 }, w: 2 },
+    { name: '墙体共鸣', block: 8, self: { strength: 1 }, w: 1 },
+  ]},
   /* —— 头目 —— */
   worm:   { id: 'worm', name: '矿坑之王·掘地虫', art: '🪱', hp: 95, xp: 80, gold: [60, 80], boss: true, moves: [
     { name: '吞噬', dmg: 12, w: 3 },
@@ -239,6 +247,8 @@ DATA.GROUPS = {
   wisp_echo:      ['wisp_echo'],
   tower_wraiths:  ['shard_wraith', 'shard_wraith'],
   tower_guard:    ['star_golem'],
+  wall_spawns:    ['lurker', 'spider'],
+  wall_thing:     ['wall_thing'],
   boss_worm:      ['worm'],
   boss_morgan:    ['morgan', 'shadow_mage'],
 };
@@ -601,6 +611,10 @@ DATA.SCENES = {
         fail: { text: '指尖刚触到岩壁，渣土簌簌而落——一具骷髅从墙里立了起来，眼窝里燃着幽火！', combat: 'skeleton_spider', win: 'depths_after' },
       },
       { text: '🆘 循着呼救声前进', sub: '有人还活着', once: 'miner_done', go: 'rescue_pre' },
+      {
+        text: '🧱 走进搏动最响的第七巷', subFn: (s) => (s.flags.intel || s.flags.mine_map) ? '传闻与地图指向的尽头' : '心口的搏动在牵引你',
+        go: 'seventh_tunnel',
+      },
       { text: '🕳️ 深入三层', subFn: (s) => s.flags.bossDown ? '下层已被迷雾封死' : '搏动声的源头', show: (s) => !s.flags.bossDown, go: 'mine_heart_pre' },
       { text: '↩️ 退回矿坑入口', go: 'mine_entrance' },
     ],
@@ -654,6 +668,50 @@ DATA.SCENES = {
 
   depths_after: {
     text: '你清点战利品，靠着朽坏的支柱稍作喘息。\n\n雾从巷道深处漫上来，搏动声愈发清晰。',
+    choices: [
+      { text: '↩️ 返回矿坑一层', go: 'mine_depths' },
+    ],
+  },
+
+  /* ============ 支线 · 第七巷 ============ */
+  seventh_tunnel: {
+    onEnter: (s) => {
+      if (!s.flags.q_wall) { s.flags.q_wall = true; Quest.add(s, 'side_wall'); }
+      return null;
+    },
+    text: '第七巷比别的巷道更窄，也更冷。\n\n巷口的空地上散落着六套锈烂的行囊——剑、弓、法杖，还有几块没能带回家的腰牌。矿监日志没有写错：这里就是尽头。\n\n巷道尽头的墙面随搏动隆起、塌陷，隆起、塌陷。六套行囊的主人，没有一个走出去。',
+    choices: [
+      { text: '🔥 把火焰瓶掷向墙面', sub: '矿监日志说"带上它"——正着用', show: (s) => (s.items.firebomb || 0) > 0, fx: { useItem: 'firebomb' }, go: 'seventh_heart' },
+      { text: '🪓 劈开搏动的墙', sub: '会惊动墙里的东西', combat: 'wall_spawns', win: 'seventh_heart' },
+      {
+        text: '👂 贴墙倾听', sub: '🎲 智力检定 · DC 12', once: 'heard_names',
+        check: { stat: 'int', dc: 12 },
+        success: { text: '低语一遍遍念着六个名字。数到第七个时——它停了一下，像是在等你补上。', fx: { note: 'wall_whisper' }, go: 'seventh_tunnel' },
+        fail: { text: '心跳骤然放大，整条巷道随之震颤！你踉跄着后退，耳中嗡嗡作响。（生命 -6）', fx: { hp: -6 }, go: 'seventh_tunnel' },
+      },
+      { text: '↩️ 退回矿坑一层', go: 'mine_depths' },
+    ],
+  },
+
+  seventh_heart: {
+    text: '墙后是一个你没料到的洞窟——大得能听见回声。\n\n六顶帐篷塌在洞边，火塘早已冷透。行囊大多空了，角落里却有一只锁箱，完好无损——它没有上锁，像是留给来者的。\n\n洞窟深处的裂缝里垂下无数苍白的须。墙中之物的心跳，在这里响得像战鼓。',
+    choices: [
+      { text: '🎁 收拢六人的遗物', sub: '愿他们安息', once: 'seventh_loot', fx: { gold: 90, item: 'big_potion' }, go: 'seventh_heart' },
+      { text: '⚔️ 面对墙中之物', sub: '头目战 · 墙里的心跳', combat: 'wall_thing', win: 'seventh_win' },
+      { text: '↩️ 带着遗物撤退', sub: '有些东西，不该被吵醒', go: 'mine_depths' },
+    ],
+  },
+
+  seventh_win: {
+    onEnter: (s) => {
+      if (s.flags.wallDone) return null;
+      s.flags.wallDone = true;
+      s.deck.push('echo_strike');
+      Note.add(s, 'sixth_fate');
+      Quest.done(s, 'side_wall');
+      return '【获得 卡牌【六人斩】】\n【支线完成：墙中的心跳】';
+    },
+    text: '墙中之物炸裂成漫天尘屑，六个声音同时叹了口气。\n\n六道残影自尘屑中站起——剑士、弓手、法师……他们朝你一齐颔首，把手中的技艺留在你掌心，随后化光散去。\n\n最深处的裂缝里，第七套行囊叠得整整齐齐。第六人没有死——他放下了剑，自己沿着裂缝走了进去，再没有回头。',
     choices: [
       { text: '↩️ 返回矿坑一层', go: 'mine_depths' },
     ],
@@ -854,6 +912,7 @@ DATA.QUESTS = {
   main_tower: { id: 'main_tower', kind: '主线', name: '星核与古塔', desc: '星核碎片在掌中低语，古塔在北方山巅注视。带上它登上塔顶，面对守塔人莫尔甘。' },
   side_miner: { id: 'side_miner', kind: '支线', name: '巷道深处的呼救', desc: '矿坑一层传来微弱的呼救声，夹杂着窸窣的爬行声——有人还活着。' },
   side_grove: { id: 'side_grove', kind: '支线', name: '林心的异光', desc: '药婆雾葵的泉眼被一团"会说话的雾"占了。低语许诺你力量——但低语从来不安好心。让泉水重新清澈起来。' },
+  side_wall:  { id: 'side_wall', kind: '支线', name: '墙中的心跳', desc: '矿坑第七巷的墙在搏动。酒馆的传闻、半张地图、矿监日志、托马斯的警告——全都指向这里。墙里的东西，已经等了很久。' },
 };
 
 DATA.NOTES = {
@@ -871,6 +930,8 @@ DATA.NOTES = {
   spring_pure:   { id: 'spring_pure', title: '💠 重澈的泉眼', text: '低语散尽，泉底的星屑浮上水面，碎成满潭清光。雾葵说，泉水喂了百年的山峦——泉清了，山或许还有救。' },
   tower_fresco:  { id: 'tower_fresco', title: '🎨 塔底壁画', text: '壁画描绘百年前的那一夜：守塔人将影魔钉入塔顶，星核化作锁链。最末一格，他独自坐在祭坛边，在塔门上刻下一行诗。' },
   keeper_journal:{ id: 'keeper_journal', title: '📜 守塔人的手记', text: '"雾又开始涨了。我把诗刻在门上——若有人念起它，或许能想起我不是怪物。……第两百一十四年。星核还在唱。我把耳朵贴着锁，听了整夜。"' },
+  wall_whisper:  { id: 'wall_whisper', title: '👂 墙中的低语', text: '贴着第七巷的墙，低语一遍遍念着六个名字。数到第七个时——它停了一下，像是在等你补上。' },
+  sixth_fate:    { id: 'sixth_fate', title: '📜 第六人的去向', text: '第七巷深处的裂缝旁，第六人的行囊叠得整整齐齐。前五个人被墙吃了；第六人放下了剑，自己走了进去。托马斯说"别信它说的话"——可有人信了。' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */
