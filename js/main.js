@@ -52,6 +52,7 @@ const Main = {
       '<div class="title-menu">' +
       '<button class="title-btn" id="t-continue"' + (hasSave ? '' : ' disabled') + '>继 续 冒 险</button>' +
       '<button class="title-btn" id="t-new">新 的 冒 险</button>' +
+      '<button class="title-btn" id="t-achv">🏆 成 就 图 鉴（' + Achieve.count() + '/' + Object.keys(DATA.ACHIEVEMENTS).length + '）</button>' +
       '<button class="title-btn" id="t-help">操 作 说 明</button>' +
       (hasSave ? '<button class="ghost-btn" id="t-del">删除存档</button>' : '') +
       '</div>' +
@@ -65,6 +66,7 @@ const Main = {
     const cont = $('#t-continue');
     if (cont) cont.onclick = () => { Sfx.play('click'); this.loadSave('读取存档'); };
     $('#t-help').onclick = () => { Sfx.play('click'); UI.helpModal(); };
+    $('#t-achv').onclick = () => { Sfx.play('click'); UI.achieveModal(); };
     const del = $('#t-del');
     if (del) del.onclick = () => {
       Save.clear();

@@ -131,6 +131,8 @@ button { font-family: var(--serif); }
   animation: fadeIn .3s ease;
 }
 .journal-item.done { opacity: .62; border-left-color: #4d6e4d; }
+.journal-item.achv-locked { opacity: .5; border-left-color: var(--line); }
+.achv-icon { margin-right: 8px; }
 .ji-head { font-size: 15px; color: var(--text); }
 .ji-kind {
   font-size: 11px; color: var(--red);

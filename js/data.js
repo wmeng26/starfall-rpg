@@ -957,3 +957,26 @@ DATA.NOTES = {
 
 /* 高阶卡牌（旅人出售，按职业） */
 DATA.CLASS_CARDS = { warrior: 'battle_rage', mage: 'flamestorm', ranger: 'piercing_arrow' };
+
+/* ============================ 成就 ============================
+   跨周目持久保存；test(state) 返回 true 即解锁。
+   结局成就依赖 scene（结局场景自身），支线成就依赖 flags。
+============================================================ */
+DATA.ACHIEVEMENTS = {
+  first_win:     { id: 'first_win', icon: '⚔️', name: '初战告捷', desc: '首次战斗胜利。', test: (s) => s.stats.battles >= 1 },
+  worm_slain:    { id: 'worm_slain', icon: '🪱', name: '矿坑之王', desc: '击败矿坑之王·掘地虫。', test: (s) => s.flags.bossDown },
+  wall_slain:    { id: 'wall_slain', icon: '🫀', name: '墙中的心跳', desc: '击败第七巷的墙中之物。', test: (s) => s.flags.wallDone },
+  wisp_pure:     { id: 'wisp_pure', icon: '💠', name: '重澈的泉眼', desc: '净化林心泉眼，完成「林心的异光」。', test: (s) => s.flags.springDone },
+  miner_saved:   { id: 'miner_saved', icon: '⛑️', name: '生命的重量', desc: '救出被困矿工托马斯。', test: (s) => s.flags.minerSaved },
+  blade_claimed: { id: 'blade_claimed', icon: '🗡️', name: '百年之约', desc: '从星轨石像手中取得星辉长剑。', test: (s) => s.flags.golemLoot },
+  pact_made:     { id: 'pact_made', icon: '🩸', name: '低语的契约', desc: '接受林心低语的馈赠。', test: (s) => s.flags.wispDeal },
+  chime_heard:   { id: 'chime_heard', icon: '🎐', name: '铃语的听众', desc: '听聋伯讲完风铃的来历。', test: (s) => s.journal.notes.some((n) => n.id === 'chime_lore') },
+  veteran:       { id: 'veteran', icon: '🛡️', name: '身经百战', desc: '累计战斗 15 场。', test: (s) => s.stats.battles >= 15 },
+  collector:     { id: 'collector', icon: '🂠', name: '牌组收藏家', desc: '牌组达到 20 张。', test: (s) => s.deck.length >= 20 },
+  rich:          { id: 'rich', icon: '💰', name: '小有身家', desc: '同时持有 500 金币。', test: (s) => s.player.gold >= 500 },
+  ascendant:     { id: 'ascendant', icon: '⭐', name: '登峰造极', desc: '达到 Lv.8。', test: (s) => s.player.level >= 8 },
+  scholar:       { id: 'scholar', icon: '📓', name: '博闻强识', desc: '冒险笔记收集 12 篇。', test: (s) => s.journal.notes.length >= 12 },
+  ending_light:  { id: 'ending_light', icon: '✨', name: '结局 · 星光', desc: '净化星核，雾散于晨光。', test: (s) => s.flags.core === 'pure' && String(s.scene).indexOf('ending') === 0 },
+  ending_dark:   { id: 'ending_dark', icon: '👑', name: '结局 · 新王', desc: '吞下黑暗，成为新守塔人。', test: (s) => s.flags.core === 'absorb' && String(s.scene).indexOf('ending') === 0 },
+  ending_peace:  { id: 'ending_peace', icon: '🕊️', name: '结局 · 长夜', desc: '封存碎片，雾依旧，镇犹存。', test: (s) => s.scene === 'ending_peace' },
+};

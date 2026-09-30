@@ -216,6 +216,8 @@ with sync_playwright() as p:
     check('新守塔人' in body, '结局文本正确')
     check(not page.evaluate('!!localStorage.getItem("starfall_rpg_save_v1")'), '结局清档')
     page.screenshot(path=os.path.join(SHOT, '11_ending_dark.png'))
+    achv = page.evaluate('JSON.parse(localStorage.getItem("starfall_rpg_achv_v1")||"[]")')
+    check('ending_dark' in achv and 'worm_slain' in achv and 'first_win' in achv, '结局清档后成就仍保留（结局/头目/首胜）')
 
     # ================= 2.5 星陨林支线 =================
     print('== 星陨林支线 ==')
@@ -363,6 +365,23 @@ with sync_playwright() as p:
     box = page.locator('#charpanel').bounding_box()
     check(box is not None and box['x'] < 0, '点遮罩收回面板')
     page.set_viewport_size({'width': 1280, 'height': 860})
+
+    # ================= 7. 成就图鉴 =================
+    print('== 成就图鉴 ==')
+    page.evaluate('Main.showTitle()')
+    page.wait_for_timeout(300)
+    check(page.evaluate('!!document.getElementById("t-achv")'), '标题画面有成就图鉴按钮')
+    achv_n = page.evaluate('Achieve.count()')
+    check(achv_n >= 3, '已解锁成就数 ≥ 3（当前 %d）' % achv_n)
+    page.click('#t-achv')
+    page.wait_for_timeout(300)
+    mt = page.locator('.modal-box .modal-title').inner_text()
+    check('成就' in mt.replace(' ', ''), '成就图鉴弹窗打开: ' + mt)
+    body = page.locator('.modal-box .modal-body').inner_text()
+    check('矿坑之王' in body and '结局 · 新王' in body and '？？？' in body, '图鉴含已解锁与未解锁条目')
+    page.screenshot(path=os.path.join(SHOT, '15_achievements.png'))
+    page.locator('.modal-close').click()
+    page.wait_for_timeout(200)
 
     browser.close()
 

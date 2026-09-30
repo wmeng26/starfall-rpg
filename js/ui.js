@@ -270,6 +270,23 @@ const UI = {
     UI.modal('属 性 说 明', html);
   },
 
+  /* 成就图鉴弹窗（跨周目，无需存档） */
+  achieveModal() {
+    const got = Achieve.all();
+    let html = '';
+    for (const id in DATA.ACHIEVEMENTS) {
+      const a = DATA.ACHIEVEMENTS[id];
+      const ok = got.has(id);
+      html += '<div class="journal-item' + (ok ? '' : ' achv-locked') + '">' +
+        '<div class="ji-head"><span class="achv-icon">' + (ok ? a.icon : '🔒') + '</span>' +
+        '<b>' + (ok ? a.name : '？？？') + '</b></div>' +
+        '<div class="ji-desc">' + a.desc + '</div></div>';
+    }
+    html += '<div class="cp-hint" style="margin-top:10px">🏆 已解锁 ' + got.size + ' / ' + Object.keys(DATA.ACHIEVEMENTS).length +
+      ' · 成就跨周目保存，删除存档或通关清档均不影响。</div>';
+    UI.modal('成 就 图 鉴', html);
+  },
+
   /* 冒险笔记弹窗：任务 + 情报线索 */
   journalModal() {
     const s = G.state;

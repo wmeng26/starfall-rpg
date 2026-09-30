@@ -26,7 +26,7 @@ const Story = {
       if (typeof r === 'string') extra = r;
     }
 
-    if (G.state) G.state.scene = id;
+    if (G.state) { G.state.scene = id; Achieve.check(G.state); }
     UI.showView('story');
     UI.renderChar();
     UI.renderHud();

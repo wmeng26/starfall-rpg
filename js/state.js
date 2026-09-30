@@ -83,6 +83,39 @@ function repairSave(st) {
   return st;
 }
 
+/* —— 成就（跨周目持久，独立于存档） ——
+   DATA.ACHIEVEMENTS[id].test(state) 返回 true 即解锁；
+   解锁记录保存在独立的 localStorage 键中，删除存档 / 结局清档不影响。 */
+const ACHV_KEY = 'starfall_rpg_achv_v1';
+const Achieve = {
+  _set: null,
+  all() {
+    if (this._set) return this._set;
+    try { this._set = new Set(JSON.parse(localStorage.getItem(ACHV_KEY) || '[]')); }
+    catch (e) { this._set = new Set(); }
+    return this._set;
+  },
+  has(id) { return this.all().has(id); },
+  count() { return this.all().size; },
+  unlock(id) {
+    const def = DATA.ACHIEVEMENTS[id];
+    if (!def || this.has(id)) return false;
+    this.all().add(id);
+    try { localStorage.setItem(ACHV_KEY, JSON.stringify(Array.from(this.all()))); } catch (e) {}
+    UI.toast('🏆 成就解锁：' + def.name, 'good');
+    UI.log('🏆 成就解锁：' + def.icon + ' ' + def.name + ' —— ' + def.desc, 'sys');
+    Sfx.play('levelup');
+    return true;
+  },
+  check(state) {
+    if (!state || !DATA.ACHIEVEMENTS) return;
+    for (const id in DATA.ACHIEVEMENTS) {
+      if (this.has(id)) continue;
+      try { if (DATA.ACHIEVEMENTS[id].test(state)) this.unlock(id); } catch (e) {}
+    }
+  },
+};
+
 /* —— 新角色 —— */
 function newGameState(clsId) {
   const c = DATA.CLASSES[clsId];

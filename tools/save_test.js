@@ -33,7 +33,7 @@ const fakeEl = () => ({
 });
 const store = {};
 const sb = new Function('document', 'window', 'localStorage', 'Main',
-  ALL_JS + '\n;return { G, Combat, UI, Save, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded };'
+  ALL_JS + '\n;return { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded };'
 )(
   {
     querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
@@ -47,7 +47,7 @@ const sb = new Function('document', 'window', 'localStorage', 'Main',
   },
   { showDeath() {}, showTitle() {} }
 );
-const { G, Combat, UI, Save, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded } = sb;
+const { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded } = sb;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /* 临时静音 UI 输出，避免刷屏 */
@@ -560,10 +560,41 @@ async function main() {
     Combat.C = null;
   }
 
+  console.log('== 成就系统 ==');
+
+  /* 37. 成就：解锁 / 去重 / 持久化 / 批量评估 */
+  {
+    Achieve._set = null;
+    delete store['starfall_rpg_achv_v1'];
+    check(Achieve.unlock('first_win') === true, '成就解锁成功');
+    check(Achieve.unlock('first_win') === false, '重复解锁被去重');
+    Achieve._set = null;   /* 模拟重新载入页面 */
+    check(Achieve.has('first_win'), '成就跨会话持久化');
+
+    const st = newGameState('warrior');
+    st.stats.battles = 1;
+    st.flags.bossDown = true;
+    st.scene = 'ending_dark';
+    st.flags.core = 'absorb';
+    Achieve.check(st);
+    check(Achieve.has('worm_slain') && Achieve.has('ending_dark') && Achieve.has('first_win'), 'check() 批量评估条件并解锁');
+    check(!Achieve.has('ending_light') && !Achieve.has('ending_peace'), '未达成的结局成就不误解锁');
+
+    const st2 = newGameState('mage');
+    st2.scene = 'ending_peace';
+    Achieve.check(st2);
+    check(Achieve.has('ending_peace'), '长夜结局按场景判定解锁');
+
+    check(JSON.parse(store['starfall_rpg_achv_v1']).length === Achieve.count(), '解锁记录写入 localStorage');
+    check(Achieve.count() === Object.keys(DATA.ACHIEVEMENTS).filter((id) => Achieve.has(id)).length, '计数与解锁集合一致');
+    Achieve._set = null;
+    delete store['starfall_rpg_achv_v1'];
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 校验全部通过（36 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 / 成就系统 校验全部通过（37 组）');
   process.exit(0);
 }
 

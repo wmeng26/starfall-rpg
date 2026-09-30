@@ -474,6 +474,7 @@ const Combat = {
     gainXp(G.state, xp);
     UI.log('💰 战利品 ' + gold + ' 金币', 'gain');
     UI.renderHud();
+    Achieve.check(G.state);
 
     let potionDrop = null;
     if (Math.random() < 0.28 && !C.enemies.some((e) => e.boss)) {
