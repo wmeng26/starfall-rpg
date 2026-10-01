@@ -206,25 +206,43 @@ const Cycle = {
 };
 
 /* —— 迷雾回廊（无尽模式，跨周目持久，独立于存档） ——
-   只记录一个数字：你在这条回廊里走到过的最深处。
-   死亡、删档、开新局都不会抹掉它——雾记得每一个走得够深的人。 */
+   记录：最深层数 best、穿过侧门的次数 doors、遭遇过的异变种类 ev。
+   死亡、删档、开新局都不会抹掉它们——雾记得每一个走得够深的人。 */
 const ENDLESS_KEY = 'starfall_rpg_endless_v1';
 const Endless = {
-  _best: null,
-  best() {
-    if (this._best === null) {
-      let v = null;
-      try { v = JSON.parse(localStorage.getItem(ENDLESS_KEY) || 'null'); } catch (e) {}
-      this._best = (v && typeof v.best === 'number' && isFinite(v.best) && v.best > 0) ? Math.floor(v.best) : 0;
-    }
-    return this._best;
+  _data: null,
+  _load() {
+    if (this._data) return this._data;
+    let v = null;
+    try { v = JSON.parse(localStorage.getItem(ENDLESS_KEY) || 'null'); } catch (e) {}
+    v = (v && typeof v === 'object') ? v : {};
+    this._data = {
+      best: (typeof v.best === 'number' && isFinite(v.best) && v.best > 0) ? Math.floor(v.best) : 0,
+      doors: (typeof v.doors === 'number' && isFinite(v.doors) && v.doors > 0) ? Math.floor(v.doors) : 0,
+      ev: Array.isArray(v.ev) ? v.ev.filter((x) => typeof x === 'string') : [],
+    };
+    return this._data;
   },
+  _save() { try { localStorage.setItem(ENDLESS_KEY, JSON.stringify(this._load())); } catch (e) {} },
+  best() { return this._load().best; },
+  doors() { return this._load().doors; },
+  events() { return this._load().ev; },
   /* 抵达新深度则写入纪录，返回是否刷新纪录 */
   reach(depth) {
-    if (!(typeof depth === 'number' && isFinite(depth) && depth > this.best())) return false;
-    this._best = Math.floor(depth);
-    try { localStorage.setItem(ENDLESS_KEY, JSON.stringify({ best: this._best })); } catch (e) {}
+    const d = this._load();
+    if (!(typeof depth === 'number' && isFinite(depth) && depth > d.best)) return false;
+    d.best = Math.floor(depth);
+    this._save();
     return true;
+  },
+  /* 穿过一扇雾中侧门 */
+  door() { this._load().doors += 1; this._save(); },
+  /* 记录遭遇过的异变种类（跨周目，用于成就） */
+  markEvent(id) {
+    const d = this._load();
+    if (d.ev.indexOf(id) >= 0) return;
+    d.ev.push(id);
+    this._save();
   },
 };
 
@@ -393,6 +411,13 @@ function applyEffects(state, fx) {
     const amt = Math.round(p.maxHp * fx.healPct / 100);
     p.hp = Math.min(p.maxHp, p.hp + amt);
     UI.log('💚 恢复 ' + amt + ' 点生命', 'gain');
+  }
+  if (fx.hpPct) {
+    /* 按生命上限百分比增减（负值为代价），回廊异变用它表达"以血为价" */
+    const amt = Math.round(p.maxHp * Math.abs(fx.hpPct) / 100) * (fx.hpPct < 0 ? -1 : 1);
+    p.hp = Math.max(0, Math.min(p.maxHp, p.hp + amt));
+    if (amt < 0) UI.log('💔 生命 ' + amt, 'battle');
+    else UI.log('💚 恢复 ' + amt + ' 点生命', 'gain');
   }
   if (fx.item) {
     state.items[fx.item] = (state.items[fx.item] || 0) + 1;

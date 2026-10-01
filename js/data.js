@@ -329,6 +329,89 @@ function endlessGroupKey(depth) {
   return 'goblins2';
 }
 
+/* ============================ 回廊异变（质数层侧门事件） ============================
+   质数层（且非五层头目节点）的雾墙根部会裂开一道「侧门」：
+   推开它可绕过该层战斗，直面一种回廊异变——福祸难料，但每条出路都有代价或收获。
+   异变是"承诺制"的：进了门就没有空手而归的选项，每个选择要么结算收益/代价破层下行
+   （special 'endless_pass'，层数照常 +1），要么直接接入一场战斗（win 'endless_clear'）。
+   见过的异变种类经 Endless.markEvent 跨周目记录，供成就判定。 */
+DATA.ENDLESS_EVENTS = ['ev_stele', 'ev_campfire', 'ev_merchant', 'ev_thief', 'ev_crack', 'ev_ambush'];
+
+function isPrime(n) {
+  if (n < 2) return false;
+  for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
+  return true;
+}
+
+/* 下一重雾墙（endlessDepth + 1）是否开着侧门：质数层，且不与五层头目重合 */
+function endlessDoorFloor(s) {
+  const n = ((s.flags && s.flags.endlessDepth) || 0) + 1;
+  return (isPrime(n) && n % 5 !== 0) ? n : 0;
+}
+
+function endlessEventDepth(s) { return (s.flags && s.flags.endlessDepth) || 0; }
+
+function endlessRandomRelicId(s) {
+  const unowned = Object.keys(DATA.RELICS).filter((id) => !hasRelic(s, id));
+  return unowned.length ? unowned[Math.floor(Math.random() * unowned.length)] : null;
+}
+
+function endlessRandomCardId() {
+  const pool = Object.keys(DATA.CARDS).filter((id) => {
+    const r = DATA.CARDS[id].rarity;
+    return r === 'common' || r === 'rare';
+  });
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+/* 行商货担：卡牌 / 物品 / 装备各随机一件，价格随深度上涨；每个货担只属于一层 */
+function endlessMerchantStock(depth) {
+  const items = ['potion', 'big_potion', 'firebomb', 'energy_potion', 'antidote'];
+  const gear = Object.keys(DATA.GEAR);
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const itemId = pick(items);
+  return [
+    { kind: 'card', id: endlessRandomCardId(), price: 25 + 5 * depth },
+    { kind: 'item', id: itemId, price: Math.round((DATA.ITEMS[itemId].price || 30) * (1 + 0.08 * depth)) },
+    { kind: 'gear', id: pick(gear), price: 40 + 8 * depth },
+  ];
+}
+
+/* 行商的三个购入选项（按货担下标闭包生成），购入后可继续浏览，道别时才破层 */
+function endlessMerchantChoices() {
+  const SLOT_NAMES = { weapon: '武器', armor: '护甲', charm: '饰品' };
+  return [0, 1, 2].map((i) => ({
+    text: (s) => {
+      const o = (s.flags.endlessStock || [])[i];
+      if (!o) return '';
+      if (o.kind === 'card') return '🂠 购入【' + DATA.CARDS[o.id].name + '】';
+      if (o.kind === 'gear') return '⚔️ 购入【' + DATA.GEAR[o.id].name + '】';
+      const it = DATA.ITEMS[o.id];
+      return (it.art || '🎁') + ' 购入【' + it.name + '】';
+    },
+    subFn: (s) => {
+      const o = (s.flags.endlessStock || [])[i];
+      if (!o) return null;
+      let d = '花费 ' + o.price + ' 金币 · ';
+      if (o.kind === 'card') d += DATA.CARDS[o.id].desc;
+      else if (o.kind === 'gear') d += SLOT_NAMES[DATA.GEAR[o.id].slot] + ' · ' + DATA.GEAR[o.id].desc;
+      else d += DATA.ITEMS[o.id].desc;
+      return d;
+    },
+    show: (s) => !!(s.flags.endlessStock || [])[i],
+    requireGold: (s) => { const o = (s.flags.endlessStock || [])[i]; return o ? o.price : 0; },
+    fxFn: (s) => {
+      const o = (s.flags.endlessStock || [])[i];
+      if (!o) return {};
+      s.flags.endlessStock[i] = null; /* 售出即下架；go 自身重渲染货架 */
+      const fx = { gold: -o.price };
+      fx[o.kind] = o.id;
+      return fx;
+    },
+    go: 'ev_merchant',
+  }));
+}
+
 /* ============================ 剧情场景 ============================
    scene: {
      text: string | (state)=>string,
@@ -1010,7 +1093,7 @@ DATA.SCENES = {
   /* ============ 支线 · 迷雾回廊（无尽模式） ============ */
   endless_intro: {
     onEnter: (s) => { if (typeof s.flags.endlessDepth !== 'number') s.flags.endlessDepth = 0; return null; },
-    text: '你再度登上山巅。古塔背后的天空裂开一道细缝——缝隙里不是星空，而是一条悬在雾海之上的长廊。\n\n镇上的老人管它叫「迷雾回廊」：星坠之夜被击碎的东西并没有死透，它们的回响坠进了这里，一层一层，越陷越深。\n\n回廊没有尽头。只要你还站着，它就会一直向下延伸。\n\n—— 此行没有结局，只有深度。',
+    text: '你再度登上山巅。古塔背后的天空裂开一道细缝——缝隙里不是星空，而是一条悬在雾海之上的长廊。\n\n镇上的老人管它叫「迷雾回廊」：星坠之夜被击碎的东西并没有死透，它们的回响坠进了这里，一层一层，越陷越深。\n\n老人们还叮嘱过一句：有些雾墙的根部会裂着门洞，雾在门洞里打旋，却始终不肯钻进去。\n\n"别在门洞前逗留。"他们说，"门后面的东西，雾也不敢看。"\n\n回廊没有尽头。只要你还站着，它就会一直向下延伸。\n\n—— 此行没有结局，只有深度。',
     choices: [
       { text: '🌫️ 踏入回廊', go: 'endless_lobby' },
     ],
@@ -1022,6 +1105,9 @@ DATA.SCENES = {
       let t = '回廊门厅——一座悬在雾海之上的环形石台。\n\n石台边缘，一重重雾墙自下而上排开，没入高处的黑暗。每破开一重，雾就更浓一分，墙后的低语就更清晰一分。\n\n';
       t += '—— 你已破开 ' + d + ' 重雾墙（最深纪录：第 ' + Endless.best() + ' 层）。\n';
       if (d > 0 && d % 5 === 0) t += '破开第五重雾墙的碎屑尚未落定，石缝里的星尘泉水又重新涌了出来。\n';
+      if (endlessDoorFloor(s) && s.flags.endlessDoorFloor !== endlessDoorFloor(s)) {
+        t += '下一重雾墙的根部，裂着一道仅容侧身的门洞——雾在门洞里打旋，却始终不肯钻进去。\n';
+      }
       t += '\n石台中央，下一重雾墙正在凝聚。';
       return t;
     },
@@ -1030,6 +1116,12 @@ DATA.SCENES = {
         text: (s) => '⚔️ 迎战第 ' + ((s.flags.endlessDepth || 0) + 1) + ' 层的回响',
         subFn: (s) => ((s.flags.endlessDepth || 0) + 1) % 5 === 0 ? '回响头目镇守 · 胜后可择遗物回礼' : '遭遇战 · 雾更深一分',
         special: 'endless_fight',
+      },
+      {
+        text: (s) => '🚪 推开雾中侧门（第 ' + endlessDoorFloor(s) + ' 层）',
+        sub: '绕过这场战斗，直面异变 · 门后是福是祸，难说',
+        special: 'endless_door',
+        show: (s) => { const n = endlessDoorFloor(s); return !!n && s.flags.endlessDoorFloor !== n; },
       },
       {
         text: '⛲ 掬一口星尘泉水', sub: '恢复 60% 生命 · 每五层涌出一次',
@@ -1094,6 +1186,151 @@ DATA.SCENES = {
         special: 'endless_relic', pickIndex: 2,
         show: (s) => !!(s.flags.endlessPicks && DATA.RELICS[s.flags.endlessPicks[2]]) },
       { text: '↩️ 不取回礼，返回门厅', go: 'endless_lobby' },
+    ],
+  },
+
+  /* ============ 回廊异变（侧门后的六种遭遇） ============
+     承诺制：每个选项都通向 endless_pass（结算收益/代价，破层下行）或一场战斗。 */
+
+  /* —— 星辉石碑：三道凹槽，以一物换一物 —— */
+  ev_stele: {
+    text: '门后是一间半埋进雾里的石室。\n\n一块黑色的石碑斜插在室心，碑面上刻着三道凹槽，像三张阖着的嘴：一道沁着暗红，一道浮着星辉，一道嵌着铜绿。\n\n碑底有小字，笔画被岁月磨得很浅：「以一物，换一物。」',
+    choices: [
+      {
+        text: '🩸 沁红的凹槽', sub: '失去 15% 生命上限 · 换一件未持有的星尘遗物',
+        show: (s) => !!endlessRandomRelicId(s),
+        fxFn: (s) => { const fx = { hpPct: -15 }; const r = endlessRandomRelicId(s); if (r) fx.relic = r; return fx; },
+        special: 'endless_pass',
+      },
+      {
+        text: '💫 浮着星辉的凹槽', subFn: (s) => '枕着回响入睡 · 获得大量经验（' + (25 + 6 * endlessEventDepth(s)) + '）',
+        fxFn: (s) => ({ xp: 25 + 6 * endlessEventDepth(s) }),
+        special: 'endless_pass',
+      },
+      {
+        text: '🪙 嵌着铜绿的凹槽', subFn: (s) => '星尘凝成钱币 · 获得 ' + (20 + 6 * endlessEventDepth(s)) + ' 金币',
+        fxFn: (s) => ({ gold: 20 + 6 * endlessEventDepth(s) }),
+        special: 'endless_pass',
+      },
+    ],
+  },
+
+  /* —— 拾荒者的篝火：休整、赌局，或买一张来路不明的牌 —— */
+  ev_campfire: {
+    text: '门后竟有火光。\n\n一个披着油布斗篷的拾荒者守着一小堆篝火。火里烧的不是柴，是雾凝成的碎块，噼啪作响。「侧门后面居然还有人。」他头也不抬，「坐吧。或者赌一把——干我这行的，赌运气比赌命长。」',
+    choices: [
+      {
+        text: '🛖 借火烤干斗篷',
+        subFn: (s) => s.player.hp >= s.player.maxHp ? '生命已满，无需烤火' : '恢复 30% 生命',
+        fx: { healPct: 30 },
+        special: 'endless_pass',
+        disabled: (s) => s.player.hp >= s.player.maxHp,
+      },
+      {
+        text: '🎲 掷一把星尘骰',
+        subFn: (s) => '智力检定 DC ' + (9 + Math.floor(endlessEventDepth(s) / 2)) + ' · 赢了拿走他的星尘袋',
+        check: { stat: 'int', dc: (s) => 9 + Math.floor(endlessEventDepth(s) / 2) },
+        success: { text: '骰子停在你说出的点数上。\n\n拾荒者骂了一声，把一小袋星尘推了过来——落进你掌心就化成了温热的金币。', fxFn: (s) => ({ gold: 30 + 8 * endlessEventDepth(s) }), pass: true },
+        fail: { text: '骰子停在反面。\n\n拾荒者笑着把你的赌注扒拉进怀里：「下回带够运气再来。」', fxFn: (s) => ({ gold: -(15 + 4 * endlessEventDepth(s)) }), pass: true },
+      },
+      {
+        text: '🂠 翻看他的货担',
+        subFn: (s) => '花费 ' + (25 + 5 * endlessEventDepth(s)) + ' 金币 · 换一张来路不明的牌',
+        requireGold: (s) => 25 + 5 * endlessEventDepth(s),
+        fxFn: (s) => ({ gold: -(25 + 5 * endlessEventDepth(s)), card: endlessRandomCardId() }),
+        special: 'endless_pass',
+      },
+    ],
+  },
+
+  /* —— 雾中行商：挂灯笼的窄廊，只收带雾气的金币 —— */
+  ev_merchant: {
+    onEnter: (s) => {
+      const d = endlessEventDepth(s);
+      /* 货担属于当前层：在同层反复进出不换货，破层后再来才是新货 */
+      if (s.flags.endlessStockFloor !== d || !Array.isArray(s.flags.endlessStock)) {
+        s.flags.endlessStockFloor = d;
+        s.flags.endlessStock = endlessMerchantStock(d);
+      }
+      return null;
+    },
+    text: '门后是一条挂满纸灯笼的窄廊。\n\n一个看不清脸的行商坐在货担后面，斗笠压得很低，帽檐下只有雾。「回廊里的东西，外头的钱买不走。」他的声音像隔着一层水，「我只要带雾气的金币。」',
+    choices: endlessMerchantChoices().concat([
+      { text: '🚪 道别，继续下行', sub: '雾墙会在你身后合拢', special: 'endless_pass' },
+    ]),
+  },
+
+  /* —— 雾影窃贼：先偷后算，追或不追 —— */
+  ev_thief: {
+    onEnter: (s) => {
+      const take = Math.min(s.player.gold, 10 + 3 * endlessEventDepth(s));
+      if (take > 0) {
+        s.player.gold -= take;
+        return '【雾影窃贼掠走了 ' + take + ' 金币】';
+      }
+      return '【它在你空空的钱袋边绕了一圈，似乎很失望。】';
+    },
+    text: '门后是一条仅容侧身的裂缝。\n\n你挤进去时，一小片影子贴着地面窜过——有什么东西在你钱袋里轻轻一撞，随即钻进了雾的深处。\n\n裂缝尽头，雾在打转，岔出一条条看不清去路的小径。',
+    choices: [
+      {
+        text: '🏃 追进雾里',
+        subFn: (s) => '敏捷检定 DC ' + (10 + Math.floor(endlessEventDepth(s) / 3)) + ' · 夺回金币，或许还有利息',
+        check: { stat: 'agi', dc: (s) => 10 + Math.floor(endlessEventDepth(s) / 3) },
+        success: { text: '你在第三个岔口堵住了它。\n\n小东西把金币丢还给你，还多添了几枚——像是利息，又像是求饶。', fxFn: (s) => ({ gold: 25 + 7 * endlessEventDepth(s) }), pass: true },
+        fail: { text: '岔路一条接一条，影子早没了踪影。\n\n你摸黑往回走，在嶙峋的石壁上擦破了手肘。', fxFn: (s) => ({ gold: -(12 + 4 * endlessEventDepth(s)), hpPct: -5 }), pass: true },
+      },
+      {
+        text: '🗣️ 冲雾喊话',
+        subFn: (s) => '魅力检定 DC ' + (11 + Math.floor(endlessEventDepth(s) / 3)) + ' · 让它把东西还回来',
+        check: { stat: 'cha', dc: (s) => 11 + Math.floor(endlessEventDepth(s) / 3) },
+        success: { text: '你的嗓门在裂缝里荡出回声。\n\n影子停了一瞬，把鼓鼓的钱袋丢了出来，一瘸一拐地遁入雾底。', fxFn: (s) => ({ gold: 12 + 4 * endlessEventDepth(s) }), pass: true },
+        fail: { text: '雾把你的声音吞得干干净净。\n\n等回声散尽，你数了数——袋里的金币比刚才更少了。', fxFn: (s) => ({ gold: -(15 + 5 * endlessEventDepth(s)) }), pass: true },
+      },
+      {
+        text: '✋ 就当喂了雾',
+        subFn: (s) => '记下它跑动的路线 · 获得 ' + (8 + 2 * endlessEventDepth(s)) + ' 经验',
+        fxFn: (s) => ({ xp: 8 + 2 * endlessEventDepth(s) }),
+        special: 'endless_pass',
+      },
+    ],
+  },
+
+  /* —— 星尘裂隙：一道漏着星辉的缝，甜味可疑 —— */
+  ev_crack: {
+    text: '门后没有房间——只有一道把石壁撑开的裂隙。\n\n星辉从缝隙深处漏出来，在地面淌成一小片银色的洼。风从裂隙里吹出来，带着一点很淡的、类似星屑的甜味。\n\n你的手比脑子先动了。',
+    choices: [
+      {
+        text: '🤲 掬一捧银色的洼', sub: '多半是甘泉 · 也可能烫手',
+        fxFn: () => (Math.random() < 0.65 ? { healPct: 35 } : { hpPct: -12 }),
+        special: 'endless_pass',
+      },
+      {
+        text: '🧪 装一瓶裂隙里的光', sub: '得到星辉露珠 · 恢复 40 点生命',
+        fxFn: () => ({ item: 'star_dew' }),
+        special: 'endless_pass',
+      },
+      {
+        text: '📐 丈量裂隙的走向', subFn: (s) => '记下星辉的流向 · 获得 ' + (18 + 5 * endlessEventDepth(s)) + ' 经验',
+        fxFn: (s) => ({ xp: 18 + 5 * endlessEventDepth(s) }),
+        special: 'endless_pass',
+      },
+    ],
+  },
+
+  /* —— 坍塌的暗室：前人的行囊，新鲜的爪印 —— */
+  ev_ambush: {
+    text: '门后是一间被雾压塌了半边的暗室。\n\n碎石之间散落着前人的行囊——翻得干干净净，只留下几枚滚进石缝的星尘币，和一圈新鲜的爪印。\n\n头顶，你挤进来时撑开的那道缝，正在慢慢收口。',
+    choices: [
+      {
+        text: '⚔️ 背靠石壁，提械备战', sub: '爪印的主人还在暗处 · 胜利照常破层',
+        combat: 'wall_spawns', win: 'endless_clear',
+      },
+      {
+        text: '💰 抓起行囊就往外挤',
+        subFn: (s) => '夺得 ' + (30 + 8 * endlessEventDepth(s)) + ' 金币 · 挤出裂缝时擦伤（失去 8% 生命上限）',
+        fxFn: (s) => ({ gold: 30 + 8 * endlessEventDepth(s), hpPct: -8 }),
+        special: 'endless_pass',
+      },
     ],
   },
 
@@ -1184,4 +1421,6 @@ DATA.ACHIEVEMENTS = {
   endless_5:     { id: 'endless_5', icon: '🌫️', name: '初入回廊', desc: '在迷雾回廊破开 5 重雾墙。', test: () => Endless.best() >= 5 },
   endless_10:    { id: 'endless_10', icon: '🌀', name: '回廊行者', desc: '在迷雾回廊破开 10 重雾墙。', test: () => Endless.best() >= 10 },
   endless_15:    { id: 'endless_15', icon: '♾️', name: '雾渊之主', desc: '在迷雾回廊破开 15 重雾墙。', test: () => Endless.best() >= 15 },
+  door_10:       { id: 'door_10', icon: '🚪', name: '叩门者', desc: '在迷雾回廊穿过 10 扇雾中侧门。', test: () => Endless.doors() >= 10 },
+  ev_all:        { id: 'ev_all', icon: '👁️', name: '异变全识', desc: '在迷雾回廊遭遇过全部 6 种异变。', test: () => Endless.events().length >= DATA.ENDLESS_EVENTS.length },
 };

@@ -66,7 +66,8 @@ const Story = {
       let sub = (ch.subFn ? ch.subFn(s) : null) || ch.sub || '';
       let disabled = false;
 
-      if (ch.requireGold && s.player.gold < ch.requireGold) {
+      const reqGold = (typeof ch.requireGold === 'function') ? ch.requireGold(s) : ch.requireGold;
+      if (reqGold && s.player.gold < reqGold) {
         disabled = true;
         sub = (sub ? sub + ' · ' : '') + '金币不足';
       }
@@ -122,6 +123,20 @@ const Story = {
       Combat.start(endlessGroupKey((s.flags.endlessDepth || 0) + 1), 'endless_clear');
       return;
     }
+    if (ch.special === 'endless_door') {
+      /* 穿过雾中侧门：随机遭遇一种回廊异变（避开上一次的，以免连续重复）。
+         门在当前层一次性：endlessDoorFloor 记下这扇门属于哪一层 */
+      const next = (s.flags.endlessDepth || 0) + 1;
+      s.flags.endlessDoorFloor = next;
+      Endless.door();
+      const pool = DATA.ENDLESS_EVENTS.filter((id) => id !== s.flags.endlessLastEvent);
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      s.flags.endlessLastEvent = id;
+      Endless.markEvent(id);
+      Save.write(s);
+      this.goto(id);
+      return;
+    }
     if (ch.special === 'endless_relic') {
       const picks = Array.isArray(s.flags.endlessPicks) ? s.flags.endlessPicks : [];
       const id = picks[ch.pickIndex || 0];
@@ -158,9 +173,10 @@ const Story = {
       return;
     }
 
-    /* 效果结算（特殊：职业卡牌购买） */
-    if (ch.fx) {
-      const fx = Object.assign({}, ch.fx);
+    /* 效果结算（特殊：职业卡牌购买；fxFn 允许选项在点击时动态计算效果） */
+    if (ch.fx || ch.fxFn) {
+      const fx = Object.assign({}, ch.fx || {});
+      if (ch.fxFn) Object.assign(fx, ch.fxFn(s) || {});
       if (fx.special === 'class_card') {
         fx.card = DATA.CLASS_CARDS[s.player.cls];
         delete fx.special;
@@ -172,20 +188,26 @@ const Story = {
       if (s.player.hp <= 0) { Combat.lose(); return; }
     }
 
+    /* 回廊异变收尾（放在效果之后：事件奖励/代价先行结算，随后破层下行） */
+    if (ch.special === 'endless_pass') { this.endlessPass(); return; }
+
     /* 属性检定 */
     if (ch.check) {
       const statNames = { pow: '力量', agi: '敏捷', int: '智力', cha: '魅力' };
       const mod = checkMod(s, ch.check.stat);
       const roll = 1 + Math.floor(Math.random() * 20);
+      const dc = (typeof ch.check.dc === 'function') ? ch.check.dc(s) : ch.check.dc;
       const total = roll + mod;
-      const ok = total >= ch.check.dc;
+      const ok = total >= dc;
       s.stats.checks += 1;
       Sfx.play('check');
       const diceLine = '🎲 ' + statNames[ch.check.stat] + '检定：骰 ' + roll + ' + 加值 ' + mod + ' = ' + total +
-        (ok ? ' ≥ ' : ' < ') + ch.check.dc + (ok ? ' → 成功！' : ' → 失败…') + '\n\n';
+        (ok ? ' ≥ ' : ' < ') + dc + (ok ? ' → 成功！' : ' → 失败…') + '\n\n';
       const payload = ok ? ch.success : ch.fail;
-      if (payload && payload.fx) {
-        applyEffects(s, payload.fx);
+      if (payload && (payload.fx || payload.fxFn)) {
+        const pfx = Object.assign({}, payload.fx || {});
+        if (payload.fxFn) Object.assign(pfx, payload.fxFn(s) || {});
+        applyEffects(s, pfx);
         UI.renderChar();
         UI.renderHud();
         if (s.player.hp <= 0) { Combat.lose(); return; }
@@ -216,11 +238,21 @@ const Story = {
       btn.textContent = payload && payload.combat ? '⚔️ 应战' : '▶ 继续';
       btn.onclick = () => {
         if (payload && payload.combat) Combat.start(payload.combat, payload.win);
+        else if (payload && payload.pass) this.endlessPass();
         else if (payload && payload.go) this.goto(payload.go);
         else this.goto(G.state.scene);
       };
       box.appendChild(btn);
     });
+  },
+
+  /* 回廊异变收尾：雾墙在身后合拢，层数照常 +1（不经过战斗，也没有头目回礼） */
+  endlessPass() {
+    const s = G.state;
+    s.flags.endlessDepth = (s.flags.endlessDepth || 0) + 1;
+    if (Endless.reach(s.flags.endlessDepth)) UI.toast('🌫 最深纪录：第 ' + s.flags.endlessDepth + ' 层', 'good');
+    Save.write(s);
+    this.goto('endless_lobby');
   },
 
   /* 刷新面板（不重打文字） */

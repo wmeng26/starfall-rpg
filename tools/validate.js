@@ -159,13 +159,16 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'endless_fight', 'endless_relic', 'endless_rest'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
     if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
 }
 for (const cid in (DATA.CLASS_CARDS || {})) {
   if (!CARDS[DATA.CLASS_CARDS[cid]]) err('CLASS_CARDS[' + cid + '] 未知卡牌');
+}
+for (const id of (DATA.ENDLESS_EVENTS || [])) {
+  if (!SCENES[id]) err('ENDLESS_EVENTS 未知异变场景: ' + id);
 }
 
 /* ---------- 3. 逻辑冒烟测试 ---------- */
