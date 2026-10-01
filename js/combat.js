@@ -74,6 +74,9 @@ const Combat = {
 
     G.state.stats.battles += 1;
     UI.log('⚔️ 遭遇：' + enemies.map((e) => e.name).join('、'), 'battle');
+    if (G.state.flags && G.state.flags.endless) {
+      UI.log('🌫 迷雾回廊 · 第 ' + ((G.state.flags.endlessDepth || 0) + 1) + ' 层', 'battle');
+    }
     if (es.hpMul !== 1 || es.dmgAdd > 0) {
       UI.log('🌫 迷雾增强：敌人生命 ×' + (Math.round(es.hpMul * 100) / 100) + ' · 伤害 +' + es.dmgAdd, 'battle');
     }
@@ -561,9 +564,11 @@ const Combat = {
       G.state.items[potionDrop] = (G.state.items[potionDrop] || 0) + 1;
     }
 
-    /* 三选一卡牌 */
+    /* 三选一卡牌（迷雾回廊第 5 层起，头目卡也会出现在奖励中——回响的力量向够深的人敞开） */
+    const floor = (G.state.flags && G.state.flags.endless) ? (G.state.flags.endlessDepth || 0) + 1 : 0;
     const pool = Object.values(DATA.CARDS).filter((c) =>
-      (c.rarity === 'common' || c.rarity === 'rare') && (!c.cls || c.cls === G.state.player.cls));
+      (c.rarity === 'common' || c.rarity === 'rare' || (c.rarity === 'boss' && floor >= 5)) &&
+      (!c.cls || c.cls === G.state.player.cls));
     const picks = [];
     const poolCopy = pool.slice();
     for (let i = 0; i < 3 && poolCopy.length; i++) {

@@ -27,7 +27,7 @@ const DATA = new Function(dataSrc + '\n;return DATA;')();
 /* 带 UI 桩的沙盒，测试角色/效果逻辑 */
 const sandbox = new Function(
   'const UI={log(){},toast(){}};const Sfx={play(){}};\n' + dataSrc + '\n' + stateSrc +
-  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex, Cycle, enemyScale };'
+  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex, Cycle, Endless, enemyScale, endlessGroupKey };'
 )();
 
 console.log('== 数据引用检查 ==');
@@ -159,7 +159,7 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'endless_fight', 'endless_relic', 'endless_rest'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
     if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
@@ -254,6 +254,27 @@ const cycBefore = cyc.count();
 if (cyc.recordClear({ relics: ['watch', 'ghost'], player: { gold: 200 } }) !== cycBefore + 1) err('周目计数未 +1');
 if (cyc.all().relics.length !== 1 || cyc.all().gold !== 200) err('通关快照错误（应过滤未知遗物并全额记录金币）');
 console.log('  ✓ 周目/难度 继承参数 · 缩放数值 · 通关快照 通过');
+
+/* 迷雾回廊：层数缩放 / 头目轮换 / 最深纪录 */
+const esE0 = sandbox.enemyScale({ diff: 0, cycle: 1, flags: { endless: true, endlessDepth: 0 } });
+if (esE0.hpMul !== 1 || esE0.dmgAdd !== 0 || esE0.rewardMul !== 1) err('回廊 0 层缩放应为 1: ' + JSON.stringify(esE0));
+const esE4 = sandbox.enemyScale({ diff: 0, cycle: 1, flags: { endless: true, endlessDepth: 4 } });
+if (Math.abs(esE4.hpMul - 1.6) > 1e-9 || esE4.dmgAdd !== 2 || Math.abs(esE4.rewardMul - 1.32) > 1e-9) err('回廊 4 层缩放错误: ' + JSON.stringify(esE4));
+const esEH = sandbox.enemyScale({ diff: 1, cycle: 2, flags: { endless: true, endlessDepth: 5 } });
+if (Math.abs(esEH.hpMul - 1.35 * 1.25 * 1.75) > 1e-9 || esEH.dmgAdd !== 2 + 1 + 2) err('回廊与难度/周目叠加缩放错误: ' + JSON.stringify(esEH));
+if (sandbox.enemyScale({ diff: 0, cycle: 1, flags: {} }).hpMul !== 1) err('无 endless 标记的存档不应受回廊缩放影响');
+const keyF5 = sandbox.endlessGroupKey(5), keyF10 = sandbox.endlessGroupKey(10);
+if (keyF5 !== 'endless_boss_worm' || keyF10 !== 'endless_boss_morgan') err('回廊头目轮换错误: ' + keyF5 + '/' + keyF10);
+if (!DATA.GROUPS[sandbox.endlessGroupKey(15)] || !DATA.GROUPS[sandbox.endlessGroupKey(20)]) err('回廊深层头目敌群缺失');
+for (let d = 1; d <= 40; d++) {
+  if (d % 5 === 0) continue;
+  if (!DATA.GROUPS[sandbox.endlessGroupKey(d)]) err('回廊第 ' + d + ' 层随机敌群缺失');
+}
+const endl = sandbox.Endless;
+const bestBefore = endl.best();
+if (!endl.reach(bestBefore + 3) || endl.best() !== bestBefore + 3) err('最深纪录未刷新');
+if (endl.reach(bestBefore + 1)) err('更浅深度不应刷新纪录');
+console.log('  ✓ 迷雾回廊 层数缩放 · 头目轮换 · 最深纪录 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');

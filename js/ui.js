@@ -228,7 +228,8 @@ const UI = {
     panel.innerHTML =
       '<div class="cp-head"><div class="cp-avatar">' + cls.art + '</div>' +
       '<div><div class="cp-name">' + cls.name + '</div><div class="cp-sub">Lv.' + p.level +
-      ' · 第' + (s.cycle || 1) + '周目' + (s.diff === 1 ? ' · 🌫️试炼' : '') + '</div></div></div>' +
+      ' · 第' + (s.cycle || 1) + '周目' + (s.diff === 1 ? ' · 🌫️试炼' : '') +
+      (s.flags && s.flags.endless ? ' · 回廊' + (s.flags.endlessDepth || 0) + '层' : '') + '</div></div></div>' +
 
       '<div class="bar-wrap"><div class="bar-label"><span>生命</span><span>' + p.hp + ' / ' + p.maxHp + '</span></div>' +
       '<div class="bar hp"><div class="fill" style="width:' + Math.max(0, p.hp / p.maxHp * 100) + '%"></div></div></div>' +
@@ -487,6 +488,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
       '<div class="help-sec"><b>▸ 冒险图鉴</b><br><span class="k">📖 冒险图鉴</span>跨周目收录你获得过的卡牌、持有过的遗物与击败过的敌人。标题画面、菜单或牌组弹窗的"查看全图鉴"均可查阅；未收录的条目以 ？？？ 显示。</div>' +
       '<div class="help-sec"><b>▸ 多周目与难度</b><br>每次开局的界面可选 <span class="k">磨砺（标准）</span> 或 <span class="k">迷雾试炼（困难）</span>：试炼下敌人生命 ×1.35、伤害 +2，但战利品 ×1.25。<br>通关任一结局后，标题画面解锁 <span class="k">✦ 继承开局</span>：带着上一世的全部星尘遗物与半程金币进入下一周目，敌人的血与爪随周目递增。铃语斋还提供 <span class="k">忘却之铃</span>（40 金币），可以从牌组移除一张卡牌，让套路更纯粹。</div>' +
+      '<div class="help-sec"><b>▸ 迷雾回廊（无尽模式）</b><br>通关任一结局后，标题画面解锁 <span class="k">🌫 迷雾回廊</span>：选好职业与难度，一层层破开越来越强的雾墙——敌人生命与伤害随层数无限增长。每五层是一场<span class="k">回响头目</span>战，胜后可从三件未持有的星尘遗物中挑选一件；第 5 层起，头目卡也会混入战斗奖励。门厅的星尘泉水每五层涌出一次，营地休整则随深度涨价。倒下不影响主世界存档的纪录——最深层数跨周目保存。</div>' +
       '<div class="help-sec"><b>▸ 快捷键</b><br>战斗中按 <span class="k">1~9</span> 选牌，<span class="k">E</span> 结束回合。剧情点击文字可跳过打字机动画。</div>' +
       '<div class="help-sec"><b>▸ 属性与笔记</b><br>点击左侧面板的属性可查看用途说明。<span class="k">📓 冒险笔记</span>（角色面板下方或菜单）自动记录任务进度与听来的情报线索——迷题的答案往往就藏在笔记里。</div>' +
       '<div class="help-sec" style="color:var(--dim)">游戏会在每个场景自动存档（浏览器本地）。战败可从检查点复活。</div>';

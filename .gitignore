@@ -6,3 +6,6 @@ __pycache__/
 # 系统文件
 Thumbs.db
 Desktop.ini
+
+# 会话工具本地文件
+.workbuddy/

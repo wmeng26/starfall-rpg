@@ -205,6 +205,29 @@ const Cycle = {
   count() { return this.all().count; },
 };
 
+/* —— 迷雾回廊（无尽模式，跨周目持久，独立于存档） ——
+   只记录一个数字：你在这条回廊里走到过的最深处。
+   死亡、删档、开新局都不会抹掉它——雾记得每一个走得够深的人。 */
+const ENDLESS_KEY = 'starfall_rpg_endless_v1';
+const Endless = {
+  _best: null,
+  best() {
+    if (this._best === null) {
+      let v = null;
+      try { v = JSON.parse(localStorage.getItem(ENDLESS_KEY) || 'null'); } catch (e) {}
+      this._best = (v && typeof v.best === 'number' && isFinite(v.best) && v.best > 0) ? Math.floor(v.best) : 0;
+    }
+    return this._best;
+  },
+  /* 抵达新深度则写入纪录，返回是否刷新纪录 */
+  reach(depth) {
+    if (!(typeof depth === 'number' && isFinite(depth) && depth > this.best())) return false;
+    this._best = Math.floor(depth);
+    try { localStorage.setItem(ENDLESS_KEY, JSON.stringify({ best: this._best })); } catch (e) {}
+    return true;
+  },
+};
+
 /* —— 新角色 ——
    opts: { diff, cycle, relics, gold } —— 迷雾试炼难度 / 周目数 / 继承的遗物与金币 */
 function newGameState(clsId, opts) {
@@ -314,16 +337,18 @@ function relicSum(state) {
   return out;
 }
 
-/* —— 难度 / 周目 敌人成长 ——
-   diff 1 = 迷雾试炼（困难）；cycle 为周目数，≥2 时敌人随周目递增。
+/* —— 难度 / 周目 / 回廊层数 敌人成长 ——
+   diff 1 = 迷雾试炼（困难）；cycle 为周目数，≥2 时敌人随周目递增；
+   迷雾回廊（flags.endless）中敌人随已破开的雾墙层数（endlessDepth）继续递增。
    缩放在每场战斗开始时对敌群整体生效，同一局内数值恒定。 */
 function enemyScale(state) {
   const diff = state.diff === 1 ? 1 : 0;
   const cyc = Math.max(0, (state.cycle || 1) - 1);
+  const fl = (state.flags && state.flags.endless) ? Math.max(0, state.flags.endlessDepth || 0) : 0;
   return {
-    hpMul: (diff ? 1.35 : 1) * (1 + 0.25 * cyc),
-    dmgAdd: (diff ? 2 : 0) + cyc,
-    rewardMul: (1 + 0.15 * cyc) * (diff ? 1.25 : 1),
+    hpMul: (diff ? 1.35 : 1) * (1 + 0.25 * cyc) * (1 + 0.15 * fl),
+    dmgAdd: (diff ? 2 : 0) + cyc + Math.floor(fl / 2),
+    rewardMul: (1 + 0.15 * cyc) * (diff ? 1.25 : 1) * (1 + 0.08 * fl),
   };
 }
 

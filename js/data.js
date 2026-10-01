@@ -255,6 +255,20 @@ DATA.ENEMIES = {
     { name: '汲取星光', dmg: 8, heal: 10, w: 2 },
     { name: '星辰风暴', dmg: 7, times: 3, w: 1 },
   ]},
+  /* —— 迷雾回廊（无尽模式）—— 被击碎者不肯散去的回响 */
+  worm_echo: { id: 'worm_echo', name: '掘地虫的回响', art: '🪱', hp: 115, xp: 95, gold: [75, 95], boss: true, moves: [
+    { name: '回响吞噬', dmg: 13, w: 3 },
+    { name: '余震', dmg: 6, times: 2, w: 2 },
+    { name: '硬化回声', block: 13, self: { strength: 1 }, w: 2 },
+    { name: '酸雾残响', toPlayer: { poison: 3 }, w: 1 },
+  ]},
+  morgan_echo: { id: 'morgan_echo', name: '守塔人的回响', art: '😈', hp: 160, xp: 135, gold: [115, 145], boss: true, moves: [
+    { name: '湮灭回响', dmg: 14, w: 3 },
+    { name: '锁链残影', dmg: 5, times: 2, toPlayer: { vuln: 1 }, w: 2 },
+    { name: '暗星回罩', block: 15, w: 2 },
+    { name: '星光余温', dmg: 8, heal: 10, w: 2 },
+    { name: '风暴回声', dmg: 7, times: 3, w: 1 },
+  ]},
 };
 
 /* ============================ 敌群 ============================ */
@@ -281,6 +295,8 @@ DATA.GROUPS = {
   wall_thing:     ['wall_thing'],
   boss_worm:      ['worm'],
   boss_morgan:    ['morgan', 'shadow_mage'],
+  endless_boss_worm:   ['worm_echo'],
+  endless_boss_morgan: ['morgan_echo'],
 };
 
 /* 随机遭遇池 */
@@ -288,6 +304,30 @@ DATA.ENCOUNTERS = {
   wild: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'moth_swarm'],
   mine: ['skeletons', 'spiders', 'bats', 'skeleton_spider', 'statue', 'lurker'],
 };
+
+/* ============================ 迷雾回廊（无尽模式） ============================
+   通关任一结局后解锁。层数越深，雾墙后的回响越强：
+   普通层按 ENDLESS_TIERS 分档随机遭遇；每五层是一场「回响头目」战，
+   胜后可从三件未持有的星尘遗物中挑选一件作回礼。
+   缩放叠加在难度 / 周目之上（见 state.js 的 enemyScale）。 */
+DATA.ENDLESS_TIERS = [
+  { min: 1,  max: 2,   groups: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'spiders', 'moth_swarm'] },
+  { min: 3,  max: 4,   groups: ['skeletons', 'spiders', 'skeleton_spider', 'bandits', 'grove_wisps', 'lurker'] },
+  { min: 5,  max: 7,   groups: ['statue', 'lurker', 'tower_wraiths', 'mist_stag', 'skeleton_spider'] },
+  { min: 8,  max: 999, groups: ['statue', 'tower_wraiths', 'wall_spawns', 'grove_wisps', 'skeleton_spider', 'lurker'] },
+];
+/* 回响头目轮换：第 5 / 10 / 15 / 20 层，之后循环（缩放继续加深） */
+DATA.ENDLESS_BOSSES = ['endless_boss_worm', 'endless_boss_morgan', 'tower_guard', 'wall_thing'];
+
+function endlessGroupKey(depth) {
+  if (depth % 5 === 0) {
+    return DATA.ENDLESS_BOSSES[(Math.max(1, Math.floor(depth / 5)) - 1) % DATA.ENDLESS_BOSSES.length];
+  }
+  for (const t of DATA.ENDLESS_TIERS) {
+    if (depth >= t.min && depth <= t.max) return t.groups[Math.floor(Math.random() * t.groups.length)];
+  }
+  return 'goblins2';
+}
 
 /* ============================ 剧情场景 ============================
    scene: {
@@ -967,6 +1007,96 @@ DATA.SCENES = {
     choices: [],
   },
 
+  /* ============ 支线 · 迷雾回廊（无尽模式） ============ */
+  endless_intro: {
+    onEnter: (s) => { if (typeof s.flags.endlessDepth !== 'number') s.flags.endlessDepth = 0; return null; },
+    text: '你再度登上山巅。古塔背后的天空裂开一道细缝——缝隙里不是星空，而是一条悬在雾海之上的长廊。\n\n镇上的老人管它叫「迷雾回廊」：星坠之夜被击碎的东西并没有死透，它们的回响坠进了这里，一层一层，越陷越深。\n\n回廊没有尽头。只要你还站着，它就会一直向下延伸。\n\n—— 此行没有结局，只有深度。',
+    choices: [
+      { text: '🌫️ 踏入回廊', go: 'endless_lobby' },
+    ],
+  },
+
+  endless_lobby: {
+    text: (s) => {
+      const d = s.flags.endlessDepth || 0;
+      let t = '回廊门厅——一座悬在雾海之上的环形石台。\n\n石台边缘，一重重雾墙自下而上排开，没入高处的黑暗。每破开一重，雾就更浓一分，墙后的低语就更清晰一分。\n\n';
+      t += '—— 你已破开 ' + d + ' 重雾墙（最深纪录：第 ' + Endless.best() + ' 层）。\n';
+      if (d > 0 && d % 5 === 0) t += '破开第五重雾墙的碎屑尚未落定，石缝里的星尘泉水又重新涌了出来。\n';
+      t += '\n石台中央，下一重雾墙正在凝聚。';
+      return t;
+    },
+    choices: [
+      {
+        text: (s) => '⚔️ 迎战第 ' + ((s.flags.endlessDepth || 0) + 1) + ' 层的回响',
+        subFn: (s) => ((s.flags.endlessDepth || 0) + 1) % 5 === 0 ? '回响头目镇守 · 胜后可择遗物回礼' : '遭遇战 · 雾更深一分',
+        special: 'endless_fight',
+      },
+      {
+        text: '⛲ 掬一口星尘泉水', sub: '恢复 60% 生命 · 每五层涌出一次',
+        fx: { healPct: 60 }, go: 'endless_spring',
+        show: (s) => (s.flags.endlessDepth || 0) > 0 && (s.flags.endlessDepth || 0) % 5 === 0 && s.flags.endlessSpringFloor !== (s.flags.endlessDepth || 0),
+        disabled: (s) => s.player.hp >= s.player.maxHp,
+        subFn: (s) => s.player.hp >= s.player.maxHp ? '生命已满，无需泉水' : null,
+      },
+      {
+        text: '🛖 营地休整',
+        subFn: (s) => s.player.hp >= s.player.maxHp
+          ? '生命已满，无需休整'
+          : '花费 ' + (20 + (s.flags.endlessDepth || 0) * 5) + ' 金币 · 恢复 40% 生命',
+        special: 'endless_rest',
+        disabled: (s) => s.player.hp >= s.player.maxHp,
+      },
+      { text: '🌀 离开回廊', sub: '纪录不会消失', special: 'to_title' },
+    ],
+  },
+
+  endless_spring: {
+    onEnter: (s) => { s.flags.endlessSpringFloor = s.flags.endlessDepth || 0; return null; },
+    text: '门厅一侧的石缝里渗出一泓泉水，在幽暗中泛着温润的微光——和矿坑入口、旋梯中段的那些一样，是山腹里尚未被污染的活水。\n\n你掬起一口。凉意顺着喉咙落下，星屑似的暖意在四肢间散开。\n\n（泉水每五层涌出一次。下一次破开五重雾墙后，它会再度盈满。）',
+    choices: [
+      { text: '↩️ 抹去水渍，回到门厅', go: 'endless_lobby' },
+    ],
+  },
+
+  endless_clear: {
+    /* 文本先于 onEnter 求值：层数自增与回礼列表都在 onEnter 完成，
+       动态信息（新层数 / 纪录 / 回礼）经返回的【…】消息追加在叙述之前 */
+    onEnter: (s) => {
+      s.flags.endlessDepth = (s.flags.endlessDepth || 0) + 1;
+      const d = s.flags.endlessDepth;
+      const msg = [];
+      if (Endless.reach(d)) msg.push('【迷雾回廊 · 你已破开 ' + d + ' 重雾墙（最深纪录：第 ' + d + ' 层）】');
+      s.flags.endlessPicks = null;
+      /* 每五层（回响头目战）：三件未持有的星尘遗物浮现，任择其一 */
+      if (d % 5 === 0) {
+        const unowned = Object.keys(DATA.RELICS).filter((id) => !hasRelic(s, id));
+        for (let i = unowned.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [unowned[i], unowned[j]] = [unowned[j], unowned[i]];
+        }
+        s.flags.endlessPicks = unowned.slice(0, 3);
+        msg.push('【回响头目的回礼：三件星尘遗物的虚影自雾中浮现，任择其一】');
+      }
+      return msg.length ? msg.join('\n') : null;
+    },
+    text: '雾墙寸寸碎裂，回廊在你脚下又向下让出一程。\n\n雾中的低语换了一个调子——它在丈量你，而你也在丈量它。走得更深的人才能听清它们在说什么。',
+    choices: [
+      { text: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[0]]; return r ? r.icon + ' 收下' + r.name : ''; },
+        subFn: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[0]]; return r ? r.desc : null; },
+        special: 'endless_relic', pickIndex: 0,
+        show: (s) => !!(s.flags.endlessPicks && DATA.RELICS[s.flags.endlessPicks[0]]) },
+      { text: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[1]]; return r ? r.icon + ' 收下' + r.name : ''; },
+        subFn: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[1]]; return r ? r.desc : null; },
+        special: 'endless_relic', pickIndex: 1,
+        show: (s) => !!(s.flags.endlessPicks && DATA.RELICS[s.flags.endlessPicks[1]]) },
+      { text: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[2]]; return r ? r.icon + ' 收下' + r.name : ''; },
+        subFn: (s) => { const r = DATA.RELICS[(s.flags.endlessPicks || [])[2]]; return r ? r.desc : null; },
+        special: 'endless_relic', pickIndex: 2,
+        show: (s) => !!(s.flags.endlessPicks && DATA.RELICS[s.flags.endlessPicks[2]]) },
+      { text: '↩️ 不取回礼，返回门厅', go: 'endless_lobby' },
+    ],
+  },
+
   /* ============ 结局 ============ */
   ending_light: {
     text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + (s.flags.wispDeal ? '你按了按太阳穴——那缕盘旋不去的低语，终于在光里安静了下来，像一声叹息。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】\n\n✦ 第 ' + Cycle.count() + ' 段旅程已记入星图' + (Cycle.count() > 1 ? '。' : '——标题画面已解锁「继承开局」。'),
@@ -1051,4 +1181,7 @@ DATA.ACHIEVEMENTS = {
   cycle_3:       { id: 'cycle_3', icon: '♾️', name: '雾中轮回', desc: '完成第 3 周目。', test: () => Cycle.count() >= 3 },
   diff_hard:     { id: 'diff_hard', icon: '🌫️', name: '试炼成王', desc: '以迷雾试炼（困难）难度通关任一结局。', test: (s) => s.diff === 1 && String(s.scene).indexOf('ending') === 0 },
   forget_3:      { id: 'forget_3', icon: '🌀', name: '忘却的铃声', desc: '在铃语斋以忘却之铃移除 3 张卡牌。', test: (s) => (s.stats.forgotten || 0) >= 3 },
+  endless_5:     { id: 'endless_5', icon: '🌫️', name: '初入回廊', desc: '在迷雾回廊破开 5 重雾墙。', test: () => Endless.best() >= 5 },
+  endless_10:    { id: 'endless_10', icon: '🌀', name: '回廊行者', desc: '在迷雾回廊破开 10 重雾墙。', test: () => Endless.best() >= 10 },
+  endless_15:    { id: 'endless_15', icon: '♾️', name: '雾渊之主', desc: '在迷雾回廊破开 15 重雾墙。', test: () => Endless.best() >= 15 },
 };

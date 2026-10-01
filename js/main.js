@@ -6,6 +6,7 @@
 const Main = {
 
   pendingNG: null, /* 「继承开局」暂存的周目参数：{ cycle, relics, gold }，选完职业后生效 */
+  pendingMode: null, /* 'endless' = 本次开局来自「迷雾回廊」入口 */
 
   init() {
     /* 音效偏好 */
@@ -61,7 +62,8 @@ const Main = {
       '<button class="title-btn" id="t-continue"' + (hasSave ? '' : ' disabled') + '>继 续 冒 险</button>' +
       '<button class="title-btn" id="t-new">新 的 冒 险</button>' +
       (cyc > 0
-        ? '<button class="title-btn" id="t-ngplus">✦ 第 ' + (cyc + 1) + ' 周 目 · 继 承</button>'
+        ? '<button class="title-btn" id="t-ngplus">✦ 第 ' + (cyc + 1) + ' 周 目 · 继 承</button>' +
+          '<button class="title-btn" id="t-endless">🌫 迷 雾 回 廊 · 无 尽（最深 ' + Endless.best() + ' 层）</button>'
         : '') +
       '<button class="title-btn" id="t-achv">🏆 成 就 图 鉴（' + Achieve.count() + '/' + Object.keys(DATA.ACHIEVEMENTS).length + '）</button>' +
       '<button class="title-btn" id="t-codex">📖 冒 险 图 鉴（' + Codex.count() + '/' + Codex.total() + '）</button>' +
@@ -73,6 +75,7 @@ const Main = {
     $('#t-new').onclick = () => {
       Sfx.play('click');
       this.pendingNG = null;
+      this.pendingMode = null;
       G.state = null;
       Story.goto('intro');
     };
@@ -81,6 +84,15 @@ const Main = {
       Sfx.play('click');
       const c = Cycle.all();
       this.pendingNG = { cycle: c.count + 1, relics: c.relics.slice(), gold: Math.floor((c.gold || 0) / 2) };
+      this.pendingMode = null;
+      G.state = null;
+      Story.goto('intro');
+    };
+    const en = $('#t-endless');
+    if (en) en.onclick = () => {
+      Sfx.play('click');
+      this.pendingNG = null;
+      this.pendingMode = 'endless';
       G.state = null;
       Story.goto('intro');
     };
@@ -172,10 +184,14 @@ const Main = {
     UI.showView('death');
     const view = $('#view-death');
     const hasSave = Save.has();
+    const endless = G.state && G.state.flags && G.state.flags.endless;
+    const sub = endless
+      ? '你在迷雾回廊第 ' + (G.state.flags.endlessDepth || 0) + ' 层倒下。最深纪录：第 ' + Endless.best() + ' 层——雾会记住你走过的地方。'
+      : '雾隐镇的风铃，为你响了一整夜。';
     view.innerHTML =
       '<div class="death-skull">💀</div>' +
       '<div class="death-title">你 倒 下 了</div>' +
-      '<div class="death-sub">雾隐镇的风铃，为你响了一整夜。</div>' +
+      '<div class="death-sub">' + sub + '</div>' +
       '<div class="title-menu">' +
       (hasSave ? '<button class="title-btn" id="d-retry">从检查点复活</button>' : '') +
       '<button class="title-btn" id="d-title">回 到 标 题</button>' +

@@ -62,6 +62,7 @@ const Story = {
       const btn = document.createElement('button');
       btn.className = 'choice-btn' + (ch.combat ? ' combat-choice' : '') + (ch.check ? ' check-choice' : '');
 
+      const label = (typeof ch.text === 'function') ? (ch.text(s) || '') : ch.text;
       let sub = (ch.subFn ? ch.subFn(s) : null) || ch.sub || '';
       let disabled = false;
 
@@ -75,7 +76,7 @@ const Story = {
       }
 
       btn.disabled = disabled;
-      btn.innerHTML = ch.text + (sub ? '<span class="choice-sub' + (disabled ? ' locked' : '') + '">' + sub + '</span>' : '');
+      btn.innerHTML = label + (sub ? '<span class="choice-sub' + (disabled ? ' locked' : '') + '">' + sub + '</span>' : '');
 
       btn.onclick = () => this.choose(ch);
       box.appendChild(btn);
@@ -101,8 +102,12 @@ const Story = {
     if (ch.special === 'class') {
       const ng = Main.pendingNG || null;
       Main.pendingNG = null;
+      const endless = Main.pendingMode === 'endless';
+      Main.pendingMode = null;
       G.state = newGameState(ch.cls, ng ? { cycle: ng.cycle, relics: ng.relics, gold: ng.gold } : {});
+      if (endless) G.state.flags.endless = true;
       UI.log('✦ 新的冒险开始：' + DATA.CLASSES[ch.cls].name +
+        (G.state.flags.endless ? '（迷雾回廊 · 无尽挑战）' : '') +
         (G.state.cycle > 1 ? '（第 ' + G.state.cycle + ' 周目 · 继承遗物 ' + G.state.relics.length + ' 件）' : ''), 'sys');
       this.goto('difficulty');
       return;
@@ -110,7 +115,36 @@ const Story = {
     if (ch.special === 'set_diff') {
       G.state.diff = ch.diff;
       UI.log('⚖️ 行程难度：' + (ch.diff ? '迷雾试炼（困难）' : '磨砺（标准）'), 'sys');
-      this.goto('prologue');
+      this.goto((G.state.flags && G.state.flags.endless) ? 'endless_intro' : 'prologue');
+      return;
+    }
+    if (ch.special === 'endless_fight') {
+      Combat.start(endlessGroupKey((s.flags.endlessDepth || 0) + 1), 'endless_clear');
+      return;
+    }
+    if (ch.special === 'endless_relic') {
+      const picks = Array.isArray(s.flags.endlessPicks) ? s.flags.endlessPicks : [];
+      const id = picks[ch.pickIndex || 0];
+      delete s.flags.endlessPicks;
+      if (id && DATA.RELICS[id]) applyEffects(s, { relic: id });
+      Save.write(s);
+      this.goto('endless_lobby');
+      return;
+    }
+    if (ch.special === 'endless_rest') {
+      const cost = 20 + (s.flags.endlessDepth || 0) * 5;
+      if (s.player.hp >= s.player.maxHp) { UI.toast('生命已满，无需休整', 'bad'); return; }
+      if (s.player.gold < cost) { UI.toast('金币不足（需要 ' + cost + '）', 'bad'); return; }
+      s.player.gold -= cost;
+      const amt = Math.min(Math.round(s.player.maxHp * 0.4), s.player.maxHp - s.player.hp);
+      s.player.hp += amt;
+      UI.log('🛖 营地休整：花费 ' + cost + ' 金币，恢复 ' + amt + ' 点生命', 'gain');
+      UI.toast('🛖 休整完毕：恢复 ' + amt + ' 点生命', 'good');
+      Sfx.play('heal');
+      UI.renderChar();
+      UI.renderHud();
+      Save.write(s);
+      this.goto('endless_lobby');
       return;
     }
     if (ch.special === 'forget_card') {
