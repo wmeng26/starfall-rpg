@@ -27,7 +27,7 @@ const DATA = new Function(dataSrc + '\n;return DATA;')();
 /* 带 UI 桩的沙盒，测试角色/效果逻辑 */
 const sandbox = new Function(
   'const UI={log(){},toast(){}};const Sfx={play(){}};\n' + dataSrc + '\n' + stateSrc +
-  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex };'
+  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex, Cycle, enemyScale };'
 )();
 
 console.log('== 数据引用检查 ==');
@@ -159,8 +159,9 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
+    if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
 }
 for (const cid in (DATA.CLASS_CARDS || {})) {
@@ -236,6 +237,23 @@ for (const aid of ['codex_cards', 'codex_relics', 'codex_enemies']) {
   if (typeof sandbox.DATA.ACHIEVEMENTS[aid].test({}) !== 'boolean') err('成就 ' + aid + ' test 未返回布尔值');
 }
 console.log('  ✓ 图鉴 收录 / 去重 / 计数 通过');
+/* 周目与难度：继承参数 / 缩放数值 / 通关快照 */
+const stn = sandbox.newGameState('mage', { cycle: 3, relics: ['watch', 'watch', 'ghost'], gold: 55, diff: 1 });
+if (stn.cycle !== 3 || stn.diff !== 1) err('newGameState 周目/难度字段错误');
+if (stn.relics.length !== 1 || stn.relics[0] !== 'watch') err('继承遗物过滤/去重失败: ' + JSON.stringify(stn.relics));
+if (stn.player.gold !== 85) err('继承金币错误: ' + stn.player.gold);
+if (sandbox.newGameState('ranger').cycle !== 1 || sandbox.newGameState('ranger').diff !== 0) err('默认周目/难度应为 1/0');
+const es0 = sandbox.enemyScale({ diff: 0, cycle: 1 });
+const esH = sandbox.enemyScale({ diff: 1, cycle: 1 });
+const esN = sandbox.enemyScale({ diff: 0, cycle: 3 });
+if (es0.hpMul !== 1 || es0.dmgAdd !== 0 || es0.rewardMul !== 1) err('标准难度缩放应为 1: ' + JSON.stringify(es0));
+if (esH.hpMul !== 1.35 || esH.dmgAdd !== 2 || Math.abs(esH.rewardMul - 1.25) > 1e-9) err('迷雾试炼缩放错误: ' + JSON.stringify(esH));
+if (Math.abs(esN.hpMul - 1.5) > 1e-9 || esN.dmgAdd !== 2 || Math.abs(esN.rewardMul - 1.3) > 1e-9) err('周目缩放错误: ' + JSON.stringify(esN));
+const cyc = sandbox.Cycle;
+const cycBefore = cyc.count();
+if (cyc.recordClear({ relics: ['watch', 'ghost'], player: { gold: 200 } }) !== cycBefore + 1) err('周目计数未 +1');
+if (cyc.all().relics.length !== 1 || cyc.all().gold !== 200) err('通关快照错误（应过滤未知遗物并全额记录金币）');
+console.log('  ✓ 周目/难度 继承参数 · 缩放数值 · 通关快照 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');

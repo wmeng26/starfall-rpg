@@ -49,6 +49,15 @@ const Combat = {
       };
     });
 
+    /* 难度 / 周目缩放：敌群整体成长（迷雾试炼与多周目） */
+    const es = enemyScale(G.state);
+    if (es.hpMul !== 1) {
+      for (const e of enemies) {
+        e.maxHp = Math.max(1, Math.round(e.maxHp * es.hpMul));
+        e.hp = e.maxHp;
+      }
+    }
+
     const R = relicSum(G.state);
     this.C = {
       enemies,
@@ -58,12 +67,16 @@ const Combat = {
       busy: true, over: false,
       selected: -1, targetingItem: null,
       relic: R,
+      scale: es,
       winScene: winScene || 'town',
       rewards: null,
     };
 
     G.state.stats.battles += 1;
     UI.log('⚔️ 遭遇：' + enemies.map((e) => e.name).join('、'), 'battle');
+    if (es.hpMul !== 1 || es.dmgAdd > 0) {
+      UI.log('🌫 迷雾增强：敌人生命 ×' + (Math.round(es.hpMul * 100) / 100) + ' · 伤害 +' + es.dmgAdd, 'battle');
+    }
     UI.showView('combat');
     UI.renderChar(); /* 重绘面板：战斗中隐藏面板物品"使用"按钮 */
     UI.renderHud();
@@ -432,7 +445,7 @@ const Combat = {
         UI.log('⚔️ ' + e.name + ' 使用了 ' + move.name, 'battle');
         for (let i = 0; i < times; i++) {
           if (!G.state || C.over || G.state.player.hp <= 0) break;
-          const dmg = this.calcDmg(move.dmg, e.statuses, C.player.statuses);
+          const dmg = this.calcDmg(move.dmg + (C.scale ? C.scale.dmgAdd : 0), e.statuses, C.player.statuses);
           await this.applyPlayerDamage(dmg, e.name, e);
           await sleep(300);
         }
@@ -519,6 +532,11 @@ const Combat = {
       const range = base.gold || [5, 10];
       gold += range[0] + Math.floor(Math.random() * (range[1] - range[0] + 1));
       xp += base.xp || 10;
+    }
+    /* 难度 / 周目：险路有险路的犒赏 */
+    if (C.scale && C.scale.rewardMul !== 1) {
+      gold = Math.round(gold * C.scale.rewardMul);
+      xp = Math.round(xp * C.scale.rewardMul);
     }
     const R = C.relic || {};
     if (R.goldPct) {
@@ -640,7 +658,7 @@ const Combat = {
     if (!m) return '❓';
     const parts = [];
     if (m.dmg) {
-      const per = this.calcDmg(m.dmg, e.statuses, {});
+      const per = this.calcDmg(m.dmg + (this.C.scale ? this.C.scale.dmgAdd : 0), e.statuses, {});
       parts.push('⚔️ ' + per + (m.times > 1 ? '×' + m.times : ''));
     }
     if (m.block) parts.push('🛡️ ' + m.block);

@@ -227,7 +227,8 @@ const UI = {
 
     panel.innerHTML =
       '<div class="cp-head"><div class="cp-avatar">' + cls.art + '</div>' +
-      '<div><div class="cp-name">' + cls.name + '</div><div class="cp-sub">Lv.' + p.level + ' · 冒险者</div></div></div>' +
+      '<div><div class="cp-name">' + cls.name + '</div><div class="cp-sub">Lv.' + p.level +
+      ' · 第' + (s.cycle || 1) + '周目' + (s.diff === 1 ? ' · 🌫️试炼' : '') + '</div></div></div>' +
 
       '<div class="bar-wrap"><div class="bar-label"><span>生命</span><span>' + p.hp + ' / ' + p.maxHp + '</span></div>' +
       '<div class="bar hp"><div class="fill" style="width:' + Math.max(0, p.hp / p.maxHp * 100) + '%"></div></div></div>' +
@@ -405,20 +406,54 @@ const UI = {
     UI.modal('冒 险 笔 记', html);
   },
 
-  /* 牌组浏览弹窗 */
-  deckModal() {
+  /* 牌组浏览弹窗。forgetMode=true 时为「忘却之铃」：点选卡牌从牌组移除（40 金币） */
+  deckModal(forgetMode) {
     const s = G.state;
     const counts = {};
     for (const c of s.deck) counts[c] = (counts[c] || 0) + 1;
     let html = '<div style="text-align:center">';
     for (const id in counts) {
-      html += UI.cardHtml(DATA.CARDS[id], { count: counts[id], cls: 'deck-card' });
+      html += UI.cardHtml(DATA.CARDS[id], { count: counts[id], cls: 'deck-card' + (forgetMode ? ' forgetable' : ''), dataIdx: forgetMode ? id : undefined });
     }
     html += '</div>';
+    if (forgetMode) {
+      html = '<div class="cp-hint" style="text-align:center;margin-bottom:8px">点击一张卡牌将其忘却（40 金币）——再点一次确认。<br>牌组至少保留 6 张，点击 ✕ 关闭不做任何改动。</div>' + html;
+    }
     html += '<div style="text-align:center;margin-top:10px"><button class="ghost-btn" id="btn-codex">📖 查看全图鉴</button></div>';
-    const m = UI.modal('牌 组（' + s.deck.length + ' 张）', html);
+    const m = UI.modal(forgetMode ? '忘 却 之 铃' : '牌 组（' + s.deck.length + ' 张）', html);
     const cb = m.mask.querySelector('#btn-codex');
     if (cb) cb.onclick = () => { m.close(); UI.codexModal('cards'); };
+    if (forgetMode) {
+      let armed = null;
+      m.mask.querySelectorAll('.deck-card.forgetable').forEach((el) => {
+        el.onclick = () => {
+          const cid = el.dataset.cardIdx;
+          if (!DATA.CARDS[cid]) return;
+          /* 两段确认：首点标记，再点执行 */
+          if (armed !== cid) {
+            armed = cid;
+            m.mask.querySelectorAll('.deck-card.forgetable').forEach((o) => o.classList.remove('selected'));
+            el.classList.add('selected');
+            UI.toast('再点一次确认忘却【' + DATA.CARDS[cid].name + '】', '');
+            return;
+          }
+          if (s.player.gold < 40) { UI.toast('金币不足', 'bad'); return; }
+          if (s.deck.length <= 6) { UI.toast('牌组至少保留 6 张', 'bad'); return; }
+          s.player.gold -= 40;
+          s.deck.splice(s.deck.indexOf(cid), 1);
+          s.stats.forgotten = (s.stats.forgotten || 0) + 1;
+          UI.log('🌀 忘却之铃响起——你忘却了【' + DATA.CARDS[cid].name + '】（40 金币）', 'sys');
+          UI.toast('🌀 已忘却【' + DATA.CARDS[cid].name + '】', 'good');
+          Sfx.play('card');
+          Achieve.check(s);
+          Save.write(s);
+          UI.renderHud();
+          m.close();
+          UI.deckModal(true); /* 重开以刷新牌面与计数 */
+          if (typeof Story !== 'undefined' && Story.rerender) Story.rerender();
+        };
+      });
+    }
   },
 
   /* 卡牌 HTML */
@@ -451,6 +486,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 成长</b><br>战斗胜利获得金币、经验，并从 3 张卡牌中挑选 1 张加入牌组。装备提供永久加成，药水可随时使用。</div>' +
       '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
       '<div class="help-sec"><b>▸ 冒险图鉴</b><br><span class="k">📖 冒险图鉴</span>跨周目收录你获得过的卡牌、持有过的遗物与击败过的敌人。标题画面、菜单或牌组弹窗的"查看全图鉴"均可查阅；未收录的条目以 ？？？ 显示。</div>' +
+      '<div class="help-sec"><b>▸ 多周目与难度</b><br>每次开局的界面可选 <span class="k">磨砺（标准）</span> 或 <span class="k">迷雾试炼（困难）</span>：试炼下敌人生命 ×1.35、伤害 +2，但战利品 ×1.25。<br>通关任一结局后，标题画面解锁 <span class="k">✦ 继承开局</span>：带着上一世的全部星尘遗物与半程金币进入下一周目，敌人的血与爪随周目递增。铃语斋还提供 <span class="k">忘却之铃</span>（40 金币），可以从牌组移除一张卡牌，让套路更纯粹。</div>' +
       '<div class="help-sec"><b>▸ 快捷键</b><br>战斗中按 <span class="k">1~9</span> 选牌，<span class="k">E</span> 结束回合。剧情点击文字可跳过打字机动画。</div>' +
       '<div class="help-sec"><b>▸ 属性与笔记</b><br>点击左侧面板的属性可查看用途说明。<span class="k">📓 冒险笔记</span>（角色面板下方或菜单）自动记录任务进度与听来的情报线索——迷题的答案往往就藏在笔记里。</div>' +
       '<div class="help-sec" style="color:var(--dim)">游戏会在每个场景自动存档（浏览器本地）。战败可从检查点复活。</div>';

@@ -79,6 +79,10 @@ function repairSave(st) {
   if (!p.level || p.level < 1) p.level = 1;
   if (!st.stats || typeof st.stats !== 'object') st.stats = { battles: 0, kills: 0, checks: 0 };
 
+  /* 难度 / 周目字段补齐（旧存档无此字段） */
+  if (st.diff !== 1) st.diff = 0;
+  st.cycle = (typeof st.cycle === 'number' && isFinite(st.cycle) && st.cycle >= 1) ? Math.floor(st.cycle) : 1;
+
   if (!p.maxHp || p.maxHp < 1) p.maxHp = 1;
   if (typeof p.hp !== 'number' || p.hp < 1) p.hp = p.maxHp;
   if (p.hp > p.maxHp) p.hp = p.maxHp;
@@ -170,8 +174,41 @@ const Codex = {
   },
 };
 
-/* —— 新角色 —— */
-function newGameState(clsId) {
+/* —— 周目（跨周目持久，独立于存档） ——
+   通关任一结局时:周目数 +1,并快照本局的遗物与金币，
+   供下一次「继承开局」使用。 */
+const CYCLE_KEY = 'starfall_rpg_cycle_v1';
+const Cycle = {
+  _data: null,
+  all() {
+    if (this._data) return this._data;
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(CYCLE_KEY) || 'null'); } catch (e) {}
+    d = (d && typeof d === 'object') ? d : {};
+    this._data = {
+      count: (typeof d.count === 'number' && isFinite(d.count) && d.count >= 0) ? Math.floor(d.count) : 0,
+      relics: Array.isArray(d.relics) ? d.relics.filter((id) => !!DATA.RELICS[id]) : [],
+      gold: (typeof d.gold === 'number' && isFinite(d.gold) && d.gold > 0) ? Math.floor(d.gold) : 0,
+    };
+    return this._data;
+  },
+  save() { try { localStorage.setItem(CYCLE_KEY, JSON.stringify(this.all())); } catch (e) {} },
+  /* 通关结算：周目数 +1，快照本局遗产（过滤失效 ID；金币全额记录，继承时再减半） */
+  recordClear(state) {
+    const d = this.all();
+    d.count += 1;
+    d.relics = Array.isArray(state.relics) ? state.relics.filter((id) => !!DATA.RELICS[id]) : [];
+    d.gold = (state.player && state.player.gold) || 0;
+    this.save();
+    return d.count;
+  },
+  count() { return this.all().count; },
+};
+
+/* —— 新角色 ——
+   opts: { diff, cycle, relics, gold } —— 迷雾试炼难度 / 周目数 / 继承的遗物与金币 */
+function newGameState(clsId, opts) {
+  opts = opts || {};
   const c = DATA.CLASSES[clsId];
   const state = {
     scene: 'prologue',
@@ -190,7 +227,15 @@ function newGameState(clsId) {
     journal: { quests: [], notes: [] },
     stats: { battles: 0, kills: 0, checks: 0 },
     repaired: [],
+    diff: opts.diff === 1 ? 1 : 0,                          /* 0 磨砺(标准) / 1 迷雾试炼(困难) */
+    cycle: (opts.cycle > 1) ? Math.floor(opts.cycle) : 1,   /* 周目数 */
   };
+  if (Array.isArray(opts.relics)) {
+    for (const id of opts.relics) {
+      if (DATA.RELICS[id] && state.relics.indexOf(id) < 0) state.relics.push(id);
+    }
+  }
+  if (opts.gold > 0) state.player.gold += Math.floor(opts.gold);
   return state;
 }
 
@@ -267,6 +312,19 @@ function relicSum(state) {
     }
   }
   return out;
+}
+
+/* —— 难度 / 周目 敌人成长 ——
+   diff 1 = 迷雾试炼（困难）；cycle 为周目数，≥2 时敌人随周目递增。
+   缩放在每场战斗开始时对敌群整体生效，同一局内数值恒定。 */
+function enemyScale(state) {
+  const diff = state.diff === 1 ? 1 : 0;
+  const cyc = Math.max(0, (state.cycle || 1) - 1);
+  return {
+    hpMul: (diff ? 1.35 : 1) * (1 + 0.25 * cyc),
+    dmgAdd: (diff ? 2 : 0) + cyc,
+    rewardMul: (1 + 0.15 * cyc) * (diff ? 1.25 : 1),
+  };
 }
 
 /* —— 含装备加成的属性（用于检定） —— */

@@ -5,6 +5,8 @@
 
 const Main = {
 
+  pendingNG: null, /* 「继承开局」暂存的周目参数：{ cycle, relics, gold }，选完职业后生效 */
+
   init() {
     /* 音效偏好 */
     try {
@@ -49,6 +51,7 @@ const Main = {
     $('#log').innerHTML = '';
 
     const hasSave = Save.has();
+    const cyc = Cycle.count();
     const view = $('#view-title');
     view.innerHTML =
       '<div class="title-star">✦</div>' +
@@ -57,6 +60,9 @@ const Main = {
       '<div class="title-menu">' +
       '<button class="title-btn" id="t-continue"' + (hasSave ? '' : ' disabled') + '>继 续 冒 险</button>' +
       '<button class="title-btn" id="t-new">新 的 冒 险</button>' +
+      (cyc > 0
+        ? '<button class="title-btn" id="t-ngplus">✦ 第 ' + (cyc + 1) + ' 周 目 · 继 承</button>'
+        : '') +
       '<button class="title-btn" id="t-achv">🏆 成 就 图 鉴（' + Achieve.count() + '/' + Object.keys(DATA.ACHIEVEMENTS).length + '）</button>' +
       '<button class="title-btn" id="t-codex">📖 冒 险 图 鉴（' + Codex.count() + '/' + Codex.total() + '）</button>' +
       '<button class="title-btn" id="t-help">操 作 说 明</button>' +
@@ -66,6 +72,15 @@ const Main = {
 
     $('#t-new').onclick = () => {
       Sfx.play('click');
+      this.pendingNG = null;
+      G.state = null;
+      Story.goto('intro');
+    };
+    const ng = $('#t-ngplus');
+    if (ng) ng.onclick = () => {
+      Sfx.play('click');
+      const c = Cycle.all();
+      this.pendingNG = { cycle: c.count + 1, relics: c.relics.slice(), gold: Math.floor((c.gold || 0) / 2) };
       G.state = null;
       Story.goto('intro');
     };

@@ -313,6 +313,21 @@ DATA.SCENES = {
     ],
   },
 
+  /* —— 难度选择：职业确定后、序章之前 —— */
+  difficulty: {
+    text: (s) => {
+      let t = '你整了整行囊，检查了武器与干粮。\n\n界碑之外，浓雾在夜色里翻涌如潮。这一程，你要走多险的路？';
+      if (s.cycle > 1) {
+        t += '\n\n✦ 【第 ' + s.cycle + ' 周目】上一世的遗产已收入行囊：星尘遗物 ×' + (s.relics ? s.relics.length : 0) + '、金币 ' + s.player.gold + '。\n敌人的血与爪将随周目增长——雾，也记得你。';
+      }
+      return t;
+    },
+    choices: [
+      { text: '⚖️ 磨砺 · 标准旅程', sub: '经典体验：敌人的爪牙如传闻所示', special: 'set_diff', diff: 0 },
+      { text: '🌫️ 迷雾试炼 · 困难', sub: '敌人生命 ×1.35 · 伤害 +2 · 战利品 ×1.25。致胜者，雾亦让路', special: 'set_diff', diff: 1 },
+    ],
+  },
+
   prologue: {
     onEnter: (s) => { Note.add(s, 'night_star'); },
     text: '（装备与卡牌已放入行囊。点击左侧面板可随时查看。）\n\n镇外的界碑歪在雾里。碑旁，一个绿皮身影正翻检一具商队的尸骸——哥布林。\n\n它抬起头，喉咙里滚出低吼。\n雾隐镇就在前方。但眼下，得先过这一关。',
@@ -422,6 +437,13 @@ DATA.SCENES = {
       { text: '📿 守夜风铃 —— 60 金币', sub: '饰品 · 护甲值 +1（铃音结界）', fx: { gold: -60, gear: 'night_chime' }, requireGold: 60, show: (s) => s.player.gear.charm !== 'night_chime', go: 'chimes' },
       { text: '🎧 请聋伯敲一段老铃', sub: '铃音涤荡疲惫 · 恢复 20% 生命', once: 'chime_bless', fx: { healPct: 20 }, go: 'chimes' },
       { text: '❓ 询问风铃的来历', sub: '满屋哑掉的铃，总有个缘故', once: 'asked_chimes', fx: { note: 'chime_lore' }, go: 'chimes' },
+      {
+        text: '🌀 忘却之铃 —— 40 金币', sub: '聋伯的铃音能让人忘却：从牌组中移除 1 张卡牌',
+        special: 'forget_card', requireGold: 40,
+        disabled: (s) => s.deck.length <= 6,
+        subFn: (s) => s.deck.length <= 6 ? '牌组至少保留 6 张' : null,
+        go: 'chimes',
+      },
       { text: '↩️ 回到镇中心', go: 'town' },
     ],
   },
@@ -947,21 +969,21 @@ DATA.SCENES = {
 
   /* ============ 结局 ============ */
   ending_light: {
-    text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + (s.flags.wispDeal ? '你按了按太阳穴——那缕盘旋不去的低语，终于在光里安静了下来，像一声叹息。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】',
+    text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + (s.flags.wispDeal ? '你按了按太阳穴——那缕盘旋不去的低语，终于在光里安静了下来，像一声叹息。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】\n\n✦ 第 ' + Cycle.count() + ' 段旅程已记入星图' + (Cycle.count() > 1 ? '。' : '——标题画面已解锁「继承开局」。'),
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
   },
 
   ending_dark: {
-    text: (s) => '你握碎碎片，任由黑暗贯通全身。\n\n剧痛之后，是前所未有的清明。你抬起手，雾便向两侧退开；你低语一声，星轨重新亮起。\n\n雾散了——以另一种方式。\n\n' + (s.flags.minerSaved ? '托马斯远远望着塔顶的你，摘帽，深深一躬。\n\n' : '') + (s.flags.wispDeal ? '林心的那缕低语匍匐在星光之下——它认出了你，像一个认出旧主的老仆。\n\n' : '') + '后来，雾隐镇的人们敬畏地称你为——新守塔人。\n星核的低语只对一人言说，而那人说：很好。\n\n—— 完 ——【结局 · 新王】',
+    text: (s) => '你握碎碎片，任由黑暗贯通全身。\n\n剧痛之后，是前所未有的清明。你抬起手，雾便向两侧退开；你低语一声，星轨重新亮起。\n\n雾散了——以另一种方式。\n\n' + (s.flags.minerSaved ? '托马斯远远望着塔顶的你，摘帽，深深一躬。\n\n' : '') + (s.flags.wispDeal ? '林心的那缕低语匍匐在星光之下——它认出了你，像一个认出旧主的老仆。\n\n' : '') + '后来，雾隐镇的人们敬畏地称你为——新守塔人。\n星核的低语只对一人言说，而那人说：很好。\n\n—— 完 ——【结局 · 新王】\n\n✦ 第 ' + Cycle.count() + ' 段旅程已记入星图' + (Cycle.count() > 1 ? '。' : '——标题画面已解锁「继承开局」。'),
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
   },
 
   ending_peace: {
-    text: (s) => '镇长将碎片锁入圣龛，铁链缠了七道。\n\n雾依旧，但镇子活了下来。矿工们下井时会在巷口放一盏灯——给墙里的心跳听。\n\n偶尔，你会在梦里听见那搏动。不急。它说。\n\n' + (s.flags.wispDeal ? '而另一缕低语——林心的那一位——则在你血中轻轻笑了：和你的买卖，不会作数太久。\n\n' : '') + '—— 完 ——【结局 · 长夜】',
+    text: (s) => '镇长将碎片锁入圣龛，铁链缠了七道。\n\n雾依旧，但镇子活了下来。矿工们下井时会在巷口放一盏灯——给墙里的心跳听。\n\n偶尔，你会在梦里听见那搏动。不急。它说。\n\n' + (s.flags.wispDeal ? '而另一缕低语——林心的那一位——则在你血中轻轻笑了：和你的买卖，不会作数太久。\n\n' : '') + '—— 完 ——【结局 · 长夜】\n\n✦ 第 ' + Cycle.count() + ' 段旅程已记入星图' + (Cycle.count() > 1 ? '。' : '——标题画面已解锁「继承开局」。'),
     choices: [
       { text: '✨ 回到标题', special: 'to_title' },
     ],
@@ -1025,4 +1047,8 @@ DATA.ACHIEVEMENTS = {
   codex_cards:   { id: 'codex_cards', icon: '📖', name: '阅牌无数', desc: '冒险图鉴累计收录 20 种卡牌。', test: () => Codex.count('cards') >= 20 },
   codex_relics:  { id: 'codex_relics', icon: '⚱️', name: '星尘全图', desc: '冒险图鉴收录全部 13 件星尘遗物。', test: () => Codex.count('relics') >= Object.keys(DATA.RELICS).length },
   codex_enemies: { id: 'codex_enemies', icon: '👹', name: '雾中百景', desc: '冒险图鉴累计收录 10 种敌人。', test: () => Codex.count('enemies') >= 10 },
+  cycle_2:       { id: 'cycle_2', icon: '🔄', name: '轮回之始', desc: '完成第 2 周目。', test: () => Cycle.count() >= 2 },
+  cycle_3:       { id: 'cycle_3', icon: '♾️', name: '雾中轮回', desc: '完成第 3 周目。', test: () => Cycle.count() >= 3 },
+  diff_hard:     { id: 'diff_hard', icon: '🌫️', name: '试炼成王', desc: '以迷雾试炼（困难）难度通关任一结局。', test: (s) => s.diff === 1 && String(s.scene).indexOf('ending') === 0 },
+  forget_3:      { id: 'forget_3', icon: '🌀', name: '忘却的铃声', desc: '在铃语斋以忘却之铃移除 3 张卡牌。', test: (s) => (s.stats.forgotten || 0) >= 3 },
 };

@@ -12,6 +12,13 @@ const Story = {
     const scene = DATA.SCENES[id];
     if (!scene) { console.error('场景不存在: ' + id); return; }
 
+    /* 通关结算：进入结局场景时记录周目（须在求值结局文本之前，
+       文本里的"周目 N 已记入星图"才能读到最新数字） */
+    if (G.state && id.indexOf('ending_') === 0 && !G.state.flags.cycleCounted) {
+      G.state.flags.cycleCounted = true;
+      Cycle.recordClear(G.state);
+    }
+
     /* 文本在 onEnter 之前求值：onEnter 常用于记录"已到访"之类的状态，
        若在其之后取文本，场景自己的首次/再次分支就永远读不到"进入前"的状态。 */
     const rawText = scene.text;
@@ -92,9 +99,24 @@ const Story = {
 
     /* 特殊选项 */
     if (ch.special === 'class') {
-      G.state = newGameState(ch.cls);
-      UI.log('✦ 新的冒险开始：' + DATA.CLASSES[ch.cls].name, 'sys');
+      const ng = Main.pendingNG || null;
+      Main.pendingNG = null;
+      G.state = newGameState(ch.cls, ng ? { cycle: ng.cycle, relics: ng.relics, gold: ng.gold } : {});
+      UI.log('✦ 新的冒险开始：' + DATA.CLASSES[ch.cls].name +
+        (G.state.cycle > 1 ? '（第 ' + G.state.cycle + ' 周目 · 继承遗物 ' + G.state.relics.length + ' 件）' : ''), 'sys');
+      this.goto('difficulty');
+      return;
+    }
+    if (ch.special === 'set_diff') {
+      G.state.diff = ch.diff;
+      UI.log('⚖️ 行程难度：' + (ch.diff ? '迷雾试炼（困难）' : '磨砺（标准）'), 'sys');
       this.goto('prologue');
+      return;
+    }
+    if (ch.special === 'forget_card') {
+      if (s.player.gold < (ch.requireGold || 0)) { UI.toast('金币不足', 'bad'); return; }
+      if (s.deck.length <= 6) { UI.toast('牌组至少保留 6 张', 'bad'); return; }
+      UI.deckModal(true);
       return;
     }
     if (ch.special === 'to_title') {

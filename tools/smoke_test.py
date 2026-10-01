@@ -46,8 +46,14 @@ with sync_playwright() as p:
     check(any('战士' in c for c in choices), '职业选项出现: ' + ' | '.join(choices))
     screenshot(page, '02_intro.png')
 
-    # ---- 选战士 ----
+    # ---- 选战士 → 难度（标准） ----
     page.locator('#choices .choice-btn', has_text='战士').click()
+    page.wait_for_timeout(300)
+    page.click('#scene-text')
+    page.wait_for_timeout(200)
+    diff_choices = page.locator('#choices .choice-btn').all_inner_texts()
+    check(any('磨砺' in c for c in diff_choices) and any('迷雾试炼' in c for c in diff_choices), '难度选择出现')
+    page.locator('#choices .choice-btn', has_text='磨砺').click()
     page.wait_for_timeout(300)
     page.click('#scene-text')
     page.wait_for_timeout(200)

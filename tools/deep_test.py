@@ -84,6 +84,9 @@ with sync_playwright() as p:
     page.click('#scene-text')
     page.locator('#choices .choice-btn', has_text='战士').click()
     page.wait_for_timeout(200)
+    page.click('#scene-text')  # 跳过难度场景文字
+    page.locator('#choices .choice-btn', has_text='磨砺').click()
+    page.wait_for_timeout(200)
     page.evaluate(AUTO_BATTLE)
     scenes = page.evaluate('Object.keys(DATA.SCENES)')
     bad = []

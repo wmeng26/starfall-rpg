@@ -397,6 +397,9 @@ button, .card, .choice-btn, .enemy-card, .item-use { touch-action: manipulation;
 .card.reward-card:hover { box-shadow: 0 0 0 2px var(--gold), 0 10px 24px rgba(0,0,0,.5); }
 .deck-card { display: inline-flex; flex-direction: column; width: 128px; margin: 5px; cursor: default; }
 .deck-card .card-count { position: absolute; top: -8px; right: -6px; font-size: 11px; background: var(--bg-3); border: 1px solid var(--line-hi); border-radius: 8px; padding: 0 6px; color: var(--gold); }
+.deck-card.forgetable { cursor: pointer; }
+.deck-card.forgetable:hover { transform: translateY(-10px); box-shadow: 0 0 0 2px var(--red), 0 8px 18px rgba(0,0,0,.5); }
+.deck-card.forgetable.selected { box-shadow: 0 0 0 2px var(--red), 0 0 16px rgba(192,91,91,.5); }
 
 /* 奖励界面 */
 .reward-wrap { text-align: center; animation: fadeIn .4s ease; }
