@@ -508,6 +508,7 @@ const Combat = {
     if (!G.state) return;
     C.over = true;
     C.busy = true;
+    Codex.mark('enemies', C.enemies.map((e) => e.base)); /* 图鉴：收录击败的敌人 */
     Sfx.play('win');
     UI.log('🎉 战斗胜利！', 'gain');
 

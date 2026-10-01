@@ -15,8 +15,9 @@ const Save = {
     try { return !!localStorage.getItem(SAVE_KEY); } catch (e) { return false; }
   },
   write(state) {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); return true; }
-    catch (e) { return false; }
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { return false; }
+    Codex.markState(state); /* 牌组与遗物随存档自动收录进图鉴 */
+    return true;
   },
   read() {
     try {
@@ -118,6 +119,54 @@ const Achieve = {
       if (this.has(id)) continue;
       try { if (DATA.ACHIEVEMENTS[id].test(state)) this.unlock(id); } catch (e) {}
     }
+  },
+};
+
+/* —— 冒险图鉴（跨周目持久，独立于存档） ——
+   收录条件：获得过的卡牌 / 持有过的遗物 / 击败过的敌人。
+   牌组与遗物随每次存档自动收录；敌人在战斗胜利时收录。 */
+const CODEX_KEY = 'starfall_rpg_codex_v1';
+const Codex = {
+  _data: null,
+  all() {
+    if (this._data) return this._data;
+    let d = null;
+    try { d = JSON.parse(localStorage.getItem(CODEX_KEY) || 'null'); } catch (e) {}
+    this._data = {
+      cards: [], relics: [], enemies: [],
+      ...(d && typeof d === 'object' ? d : {}),
+    };
+    /* 数据版本更新后清理失效 ID（与存档自愈同一思路） */
+    this._data.cards = this._data.cards.filter((id) => !!DATA.CARDS[id]);
+    this._data.relics = this._data.relics.filter((id) => !!DATA.RELICS[id]);
+    this._data.enemies = this._data.enemies.filter((id) => !!DATA.ENEMIES[id]);
+    return this._data;
+  },
+  has(kind, id) { return this.all()[kind].indexOf(id) >= 0; },
+  mark(kind, ids) {
+    const defs = kind === 'cards' ? DATA.CARDS : kind === 'relics' ? DATA.RELICS : DATA.ENEMIES;
+    const arr = this.all()[kind];
+    let added = 0;
+    for (const id of (Array.isArray(ids) ? ids : [ids])) {
+      if (!id || !defs[id] || arr.indexOf(id) >= 0) continue;
+      arr.push(id);
+      added += 1;
+    }
+    if (added) {
+      try { localStorage.setItem(CODEX_KEY, JSON.stringify(this.all())); } catch (e) {}
+    }
+    return added;
+  },
+  markState(st) {
+    this.mark('cards', st.deck || []);
+    this.mark('relics', st.relics || []);
+  },
+  count(kind) {
+    const d = this.all();
+    return kind ? d[kind].length : d.cards.length + d.relics.length + d.enemies.length;
+  },
+  total() {
+    return Object.keys(DATA.CARDS).length + Object.keys(DATA.RELICS).length + Object.keys(DATA.ENEMIES).length;
   },
 };
 

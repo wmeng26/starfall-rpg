@@ -1022,4 +1022,7 @@ DATA.ACHIEVEMENTS = {
   ending_light:  { id: 'ending_light', icon: '✨', name: '结局 · 星光', desc: '净化星核，雾散于晨光。', test: (s) => s.flags.core === 'pure' && String(s.scene).indexOf('ending') === 0 },
   ending_dark:   { id: 'ending_dark', icon: '👑', name: '结局 · 新王', desc: '吞下黑暗，成为新守塔人。', test: (s) => s.flags.core === 'absorb' && String(s.scene).indexOf('ending') === 0 },
   ending_peace:  { id: 'ending_peace', icon: '🕊️', name: '结局 · 长夜', desc: '封存碎片，雾依旧，镇犹存。', test: (s) => s.scene === 'ending_peace' },
+  codex_cards:   { id: 'codex_cards', icon: '📖', name: '阅牌无数', desc: '冒险图鉴累计收录 20 种卡牌。', test: () => Codex.count('cards') >= 20 },
+  codex_relics:  { id: 'codex_relics', icon: '⚱️', name: '星尘全图', desc: '冒险图鉴收录全部 13 件星尘遗物。', test: () => Codex.count('relics') >= Object.keys(DATA.RELICS).length },
+  codex_enemies: { id: 'codex_enemies', icon: '👹', name: '雾中百景', desc: '冒险图鉴累计收录 10 种敌人。', test: () => Codex.count('enemies') >= 10 },
 };

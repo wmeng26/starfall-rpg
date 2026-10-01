@@ -158,6 +158,25 @@ button, .card, .choice-btn, .enemy-card, .item-use { touch-action: manipulation;
 .relic-chips { letter-spacing: 2px; }
 .relic-chip { cursor: help; }
 
+/* ---------- 冒险图鉴 ---------- */
+.codex-tabs { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.codex-tab {
+  font-size: 13px; letter-spacing: 2px; cursor: pointer;
+  color: var(--dim); background: transparent;
+  border: 1px solid var(--line); border-radius: 18px;
+  padding: 6px 16px; transition: all .15s;
+}
+.codex-tab:hover { color: var(--text); border-color: var(--line-hi); }
+.codex-tab.on { color: var(--gold); border-color: var(--gold-dim); background: rgba(212,184,118,.08); }
+.codex-group-title { font-size: 12px; color: var(--gold-dim); letter-spacing: 3px; margin: 12px 0 4px; }
+.codex-group-title small { color: #6b6478; letter-spacing: 0; }
+.codex-cards { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0 2px; }
+.codex-card { width: 118px; height: 160px; cursor: default; }
+.codex-card:hover { transform: none; box-shadow: none; }
+.codex-card.locked { border-color: var(--line); filter: grayscale(.85) brightness(.72); }
+.codex-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.codex-art { margin-right: 8px; filter: drop-shadow(0 0 4px rgba(212,184,118,.4)); }
+
 .item-row {
   display: flex; align-items: center; justify-content: space-between;
   font-size: 13px; padding: 4px 6px; border-radius: 6px;

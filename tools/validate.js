@@ -27,7 +27,7 @@ const DATA = new Function(dataSrc + '\n;return DATA;')();
 /* 带 UI 桩的沙盒，测试角色/效果逻辑 */
 const sandbox = new Function(
   'const UI={log(){},toast(){}};const Sfx={play(){}};\n' + dataSrc + '\n' + stateSrc +
-  '\n;return { newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod };'
+  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex };'
 )();
 
 console.log('== 数据引用检查 ==');
@@ -219,6 +219,23 @@ st3.relics.push('keeper_monocle');
 if (sandbox.checkMod(st3, 'int') !== baseInt + 3) err('单片镜智力检定加值失败: ' + sandbox.checkMod(st3, 'int'));
 if (sandbox.checkMod(Object.assign({}, st3, { relics: [] }), 'cha') !== sandbox.checkMod(st3, 'cha')) err('遗物检定加值不应影响其他属性');
 console.log('  ✓ 遗物 聚合 / 去重 / 检定加值 通过');
+/* 图鉴：收录 / 去重 / 计数 */
+const cod = sandbox.Codex;
+const stc = sandbox.newGameState('warrior');
+cod.markState(stc);
+if (cod.count('cards') !== new Set(stc.deck).size) err('初始牌组收录数错误: ' + cod.count('cards'));
+cod.mark('enemies', ['goblin', 'goblin', 'goblin_thug', 'ghost_dummy']);
+if (cod.count('enemies') !== 2) err('敌人收录/去重失败: ' + cod.count('enemies'));
+cod.markState({ deck: ['strike'], relics: ['silver_tongue'] });
+if (cod.count('relics') !== 1) err('遗物收录失败: ' + cod.count('relics'));
+if (cod.count() !== cod.count('cards') + cod.count('relics') + cod.count('enemies')) err('图鉴总数与分栏不一致');
+if (cod.total() !== Object.keys(CARDS).length + Object.keys(RELICS).length + Object.keys(ENEMIES).length) err('图鉴 total 与数据不一致');
+if (!cod.has('cards', 'strike') || cod.has('relics', 'watch')) err('Codex.has 判定失败');
+/* 图鉴向成就的 test 可执行且类型正确（须在含 state.js 的沙盒里调，test 引用 Codex） */
+for (const aid of ['codex_cards', 'codex_relics', 'codex_enemies']) {
+  if (typeof sandbox.DATA.ACHIEVEMENTS[aid].test({}) !== 'boolean') err('成就 ' + aid + ' test 未返回布尔值');
+}
+console.log('  ✓ 图鉴 收录 / 去重 / 计数 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');

@@ -58,6 +58,7 @@ const Main = {
       '<button class="title-btn" id="t-continue"' + (hasSave ? '' : ' disabled') + '>继 续 冒 险</button>' +
       '<button class="title-btn" id="t-new">新 的 冒 险</button>' +
       '<button class="title-btn" id="t-achv">🏆 成 就 图 鉴（' + Achieve.count() + '/' + Object.keys(DATA.ACHIEVEMENTS).length + '）</button>' +
+      '<button class="title-btn" id="t-codex">📖 冒 险 图 鉴（' + Codex.count() + '/' + Codex.total() + '）</button>' +
       '<button class="title-btn" id="t-help">操 作 说 明</button>' +
       (hasSave ? '<button class="ghost-btn" id="t-del">删除存档</button>' : '') +
       '</div>' +
@@ -72,6 +73,7 @@ const Main = {
     if (cont) cont.onclick = () => { Sfx.play('click'); this.loadSave('读取存档'); };
     $('#t-help').onclick = () => { Sfx.play('click'); UI.helpModal(); };
     $('#t-achv').onclick = () => { Sfx.play('click'); UI.achieveModal(); };
+    $('#t-codex').onclick = () => { Sfx.play('click'); UI.codexModal(); };
     const del = $('#t-del');
     if (del) del.onclick = () => {
       Save.clear();
@@ -124,6 +126,7 @@ const Main = {
     const html =
       '<div style="display:flex;flex-direction:column;gap:10px;align-items:stretch">' +
       '<button class="title-btn" id="m-help" style="font-size:15px;padding:10px">操作说明</button>' +
+      '<button class="title-btn" id="m-codex" style="font-size:15px;padding:10px">📖 冒险图鉴（' + Codex.count() + '/' + Codex.total() + '）</button>' +
       (inGame
         ? '<button class="title-btn" id="m-journal" style="font-size:15px;padding:10px">📓 冒险笔记</button>' +
           '<button class="title-btn" id="m-title" style="font-size:15px;padding:10px">保存并回到标题</button>' +
@@ -134,6 +137,8 @@ const Main = {
     const q = (sel) => m.mask.querySelector(sel);
     const h = q('#m-help');
     if (h) h.onclick = () => { m.close(); UI.helpModal(); };
+    const cx = q('#m-codex');
+    if (cx) cx.onclick = () => { m.close(); UI.codexModal(); };
     const jb = q('#m-journal');
     if (jb) jb.onclick = () => { m.close(); UI.journalModal(); };
     const t = q('#m-title');

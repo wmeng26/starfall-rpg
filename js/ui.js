@@ -301,6 +301,80 @@ const UI = {
     UI.modal('成 就 图 鉴', html);
   },
 
+  /* 冒险图鉴弹窗（跨周目，无需存档）：卡牌 / 遗物 / 敌人 三栏 */
+  codexModal(tab) {
+    tab = tab || 'cards';
+    const RARITY = { starter: '初始', common: '普通', rare: '稀有', boss: '头目' };
+    const m = UI.modal('冒 险 图 鉴',
+      '<div class="codex-tabs" id="codex-tabs"></div><div id="codex-body"></div>' +
+      '<div class="cp-hint" id="codex-foot" style="text-align:center;margin-top:12px"></div>');
+
+    const lockedCard = () =>
+      '<div class="card codex-card locked type-skill">' +
+      '<div class="card-cost">?</div>' +
+      '<div class="card-name">？？？</div>' +
+      '<div class="card-type">未收录</div>' +
+      '<div class="card-art">🂠</div>' +
+      '<div class="card-desc">获得这张牌后收录</div></div>';
+
+    const render = () => {
+      const d = Codex.all();
+      const tabsDef = [
+        ['cards', '🂠 卡牌', d.cards.length, Object.keys(DATA.CARDS).length],
+        ['relics', '⚱️ 遗物', d.relics.length, Object.keys(DATA.RELICS).length],
+        ['enemies', '👹 敌人', d.enemies.length, Object.keys(DATA.ENEMIES).length],
+      ];
+      $('#codex-tabs').innerHTML = tabsDef.map(([id, label, n, tot]) =>
+        '<button class="codex-tab' + (id === tab ? ' on' : '') + '" data-tab="' + id + '">' +
+        label + ' ' + n + '/' + tot + '</button>').join('');
+
+      let body = '';
+      if (tab === 'cards') {
+        const groups = [['通用', null], ['战士', 'warrior'], ['法师', 'mage'], ['游侠', 'ranger']];
+        const rarityOrder = { starter: 0, common: 1, rare: 2, boss: 3 };
+        for (const [gName, cls] of groups) {
+          const list = Object.values(DATA.CARDS)
+            .filter((c) => (c.cls || null) === cls)
+            .sort((a, b) => (rarityOrder[a.rarity] || 9) - (rarityOrder[b.rarity] || 9));
+          if (!list.length) continue;
+          const got = list.filter((c) => Codex.has('cards', c.id)).length;
+          body += '<div class="codex-group-title">' + gName + ' <small>（' + got + '/' + list.length + '）</small></div><div class="codex-cards">';
+          for (const c of list) {
+            body += Codex.has('cards', c.id)
+              ? UI.cardHtml(c, { cls: 'codex-card', tag: RARITY[c.rarity] || c.rarity })
+              : lockedCard();
+          }
+          body += '</div>';
+        }
+      } else if (tab === 'relics') {
+        body += '<div class="codex-grid">';
+        for (const id in DATA.RELICS) {
+          const r = DATA.RELICS[id];
+          body += Codex.has('relics', id)
+            ? '<div class="journal-item codex-relic"><div class="ji-head"><span class="relic-icon">' + r.icon + '</span><b>' + r.name + '</b></div><div class="ji-desc">' + r.desc + '</div></div>'
+            : '<div class="journal-item codex-relic achv-locked"><div class="ji-head"><span class="relic-icon">🔒</span><b>？？？</b></div><div class="ji-desc">获得这件星尘遗物后收录。</div></div>';
+        }
+        body += '</div>';
+      } else {
+        body += '<div class="codex-grid">';
+        for (const id in DATA.ENEMIES) {
+          const e = DATA.ENEMIES[id];
+          body += Codex.has('enemies', id)
+            ? '<div class="journal-item codex-enemy"><div class="ji-head"><span class="codex-art">' + e.art + '</span><b>' + e.name + '</b>' + (e.boss ? '<span class="ji-kind">头目</span>' : '') + '</div><div class="ji-desc">生命 ' + e.hp + ' · 经验 ' + e.xp + '</div></div>'
+            : '<div class="journal-item codex-enemy achv-locked"><div class="ji-head"><span class="codex-art">❓</span><b>？？？</b></div><div class="ji-desc">击败它之后收录。</div></div>';
+        }
+        body += '</div>';
+      }
+      $('#codex-body').innerHTML = body;
+      $('#codex-foot').textContent = '📖 已收录 ' + Codex.count() + ' / ' + Codex.total() +
+        ' · 图鉴跨周目累计，删除存档不影响';
+      $$('#codex-tabs .codex-tab').forEach((b) => {
+        b.onclick = () => { Sfx.play('click'); tab = b.dataset.tab; render(); };
+      });
+    };
+    render();
+  },
+
   /* 冒险笔记弹窗：任务 + 情报线索 */
   journalModal() {
     const s = G.state;
@@ -341,7 +415,10 @@ const UI = {
       html += UI.cardHtml(DATA.CARDS[id], { count: counts[id], cls: 'deck-card' });
     }
     html += '</div>';
-    UI.modal('牌 组（' + s.deck.length + ' 张）', html);
+    html += '<div style="text-align:center;margin-top:10px"><button class="ghost-btn" id="btn-codex">📖 查看全图鉴</button></div>';
+    const m = UI.modal('牌 组（' + s.deck.length + ' 张）', html);
+    const cb = m.mask.querySelector('#btn-codex');
+    if (cb) cb.onclick = () => { m.close(); UI.codexModal('cards'); };
   },
 
   /* 卡牌 HTML */
@@ -350,6 +427,7 @@ const UI = {
     const typeIcon = { attack: '⚔️ 攻击', skill: '🛡️ 技能', power: '✨ 能力' }[card.type];
     return '<div class="card type-' + card.type + (opts.cls ? ' ' + opts.cls : '') + '"' +
       (opts.dataIdx !== undefined ? ' data-card-idx="' + opts.dataIdx + '"' : '') + '>' +
+      (opts.tag ? '<span class="card-count">' + opts.tag + '</span>' : '') +
       (opts.count ? '<span class="card-count">×' + opts.count + '</span>' : '') +
       '<div class="card-cost">' + card.cost + '</div>' +
       '<div class="card-name">' + card.name + '</div>' +
@@ -372,6 +450,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 卡牌战斗</b><br>每回合获得 <span class="k">3 点行动力</span>，抽 5 张牌。点击卡牌打出：攻击敌方、获取护甲、施加状态。护甲只在本回合内有效。<br>敌人头顶会展示<b>意图</b>（⚔️攻击 / 🛡️防御 / ⬆️强化 / ☠️诅咒），据此制定策略。<br><span class="k">中毒</span>每回合扣血递减 · <span class="k">虚弱</span>输出 ×0.75 · <span class="k">易伤</span>受伤 ×1.5 · <span class="k">力量</span>每次攻击 +N 伤。</div>' +
       '<div class="help-sec"><b>▸ 成长</b><br>战斗胜利获得金币、经验，并从 3 张卡牌中挑选 1 张加入牌组。装备提供永久加成，药水可随时使用。</div>' +
       '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
+      '<div class="help-sec"><b>▸ 冒险图鉴</b><br><span class="k">📖 冒险图鉴</span>跨周目收录你获得过的卡牌、持有过的遗物与击败过的敌人。标题画面、菜单或牌组弹窗的"查看全图鉴"均可查阅；未收录的条目以 ？？？ 显示。</div>' +
       '<div class="help-sec"><b>▸ 快捷键</b><br>战斗中按 <span class="k">1~9</span> 选牌，<span class="k">E</span> 结束回合。剧情点击文字可跳过打字机动画。</div>' +
       '<div class="help-sec"><b>▸ 属性与笔记</b><br>点击左侧面板的属性可查看用途说明。<span class="k">📓 冒险笔记</span>（角色面板下方或菜单）自动记录任务进度与听来的情报线索——迷题的答案往往就藏在笔记里。</div>' +
       '<div class="help-sec" style="color:var(--dim)">游戏会在每个场景自动存档（浏览器本地）。战败可从检查点复活。</div>';
