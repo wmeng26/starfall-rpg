@@ -36,14 +36,22 @@ body {
 
 #app {
   height: 100vh;
+  height: 100dvh; /* 手机浏览器地址栏收放时不留黑边 */
   display: flex;
   flex-direction: column;
   max-width: 1240px;
   margin: 0 auto;
   padding: 10px 14px;
+  /* 刘海屏安全区 */
+  padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
+           max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
 }
 
 button { font-family: var(--serif); }
+
+/* 触控：去掉点按高亮与双击缩放延迟（不影响捏合缩放） */
+body { -webkit-tap-highlight-color: rgba(0,0,0,0); }
+button, .card, .choice-btn, .enemy-card, .item-use { touch-action: manipulation; }
 
 /* ---------- 顶栏 ---------- */
 #topbar {
@@ -490,11 +498,35 @@ button { font-family: var(--serif); }
   .card { width: 130px; height: 180px; }
   .c-hand { min-height: 182px; }
 }
-@media (max-width: 760px) {
-  #app { padding: 6px; }
-  .title-name { font-size: 36px; letter-spacing: 8px; }
-  .brand-sub { display: none; }
+
+/* 触屏设备：去掉只能用鼠标的悬浮位移效果，点按反馈交给 :active/选中态 */
+@media (hover: none) {
+  .card:hover { transform: none; box-shadow: none; }
+  .choice-btn:hover:not(:disabled) { transform: none; }
+  .enemy-card.targetable:hover { transform: none; }
+  .title-btn:hover { transform: none; }
+}
+
+/* ---------- 手机 / 窄屏（宽度不足，或高度不足的手机横屏） ---------- */
+@media (max-width: 760px), (max-height: 500px) {
+  #app { padding: 6px; padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left)); }
+
+  /* 顶栏紧凑化 */
+  #topbar { padding: 4px 8px; }
+  .brand { font-size: 15px; letter-spacing: 1px; }
+  .brand-sub, .menu-label, .kbd-hint { display: none; } /* (E) 热键提示在触屏上无意义 */
   .mobile-only { display: inline-block; }
+  .top-right { gap: 6px; }
+  .hud-chip { font-size: 12px; padding: 3px 9px; }
+  .ghost-btn { padding: 7px 10px; font-size: 14px; } /* 加大触控目标 */
+
+  #layout { margin-top: 8px; gap: 8px; }
+
+  /* 舞台与剧情 */
+  .view { padding: 16px 14px; }
+  .scene-text { font-size: 16px; line-height: 1.9; min-height: 80px; }
+  .choices { margin-top: 18px; gap: 9px; }
+
   /* 角色面板改为左侧抽屉：顶栏 🎒 滑出，点遮罩收回 */
   #charpanel {
     position: fixed;
@@ -504,6 +536,7 @@ button { font-family: var(--serif); }
     border-radius: 0 12px 12px 0;
     transform: translateX(-105%);
     transition: transform .25s ease;
+    padding: 14px 12px calc(14px + env(safe-area-inset-bottom));
   }
   body.panel-open #charpanel { transform: none; box-shadow: 14px 0 44px rgba(0,0,0,.65); }
   body.panel-open #panel-mask {
@@ -511,4 +544,103 @@ button { font-family: var(--serif); }
     position: fixed; inset: 0; z-index: 80;
     background: rgba(8,6,12,.55);
   }
+
+  /* 底部日志压缩 */
+  #logbar { flex: 0 0 60px; margin-top: 8px; }
+  #log { font-size: 11px; line-height: 1.7; padding: 4px 10px; }
+  .log-label { font-size: 10px; letter-spacing: 2px; padding: 6px 3px; }
+
+  /* ---- 战斗界面 ---- */
+  #view-combat { padding: 8px 10px 6px; gap: 8px; }
+
+  .c-enemies { gap: 10px; min-height: 0; }
+  .enemy-card { width: 148px; padding: 6px 8px 8px; }
+  .enemy-card.boss { width: 172px; }
+  .e-art { font-size: 34px; }
+  .e-intent { font-size: 11px; min-height: 20px; }
+
+  /* 玩家中栏：放弃固定宽度，改为自适应 */
+  .c-mid { gap: 12px; padding: 6px 12px; }
+  .p-avatar { font-size: 30px; }
+  .p-info { flex: 1 1 auto; width: auto; min-width: 0; }
+  .p-block { font-size: 14px; min-width: 0; }
+  .p-energy { font-size: 15px; min-width: 0; white-space: nowrap; }
+
+  /* 手牌：单行横滑，紧凑卡牌（默认的换行布局在窄屏会堆成数层） */
+  .c-hand {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    justify-content: flex-start;
+    min-height: 164px;
+    padding: 16px 4px 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .c-hand > .card:first-child { margin-left: auto; }  /* 少时居中，多时可从边缘滑动 */
+  .c-hand > .card:last-child { margin-right: auto; }
+
+  /* 紧凑卡牌（手牌 / 奖励 / 牌组弹窗通用） */
+  .card { width: 104px; height: 146px; padding: 6px; }
+  .card-cost { width: 24px; height: 24px; line-height: 22px; font-size: 13px; top: -7px; left: -5px; }
+  .card-name { font-size: 13px; margin-top: 4px; letter-spacing: 0; }
+  .card-type { font-size: 10px; letter-spacing: 1px; margin: 1px 0 4px; }
+  .card-art { font-size: 22px; }
+  .card-desc { font-size: 10px; line-height: 1.5; margin-top: 4px; }
+  .deck-card { width: 104px; }
+
+  .c-itembar { gap: 6px; margin-bottom: 4px; }
+  .itembtn { font-size: 12px; padding: 5px 10px; }
+
+  .c-controls { flex-wrap: wrap; gap: 6px 8px; margin-top: 6px; }
+  .pile-chip { font-size: 11px; padding: 3px 9px; }
+  .endturn-btn { font-size: 15px; padding: 11px 22px; }
+
+  /* 奖励界面 */
+  .reward-cards { gap: 10px; }
+  .reward-title { font-size: 20px; letter-spacing: 2px; }
+  .title-foot { margin-top: 30px; }
+
+  /* 弹窗 / Toast */
+  .modal-box { width: min(680px, 94vw); max-height: 86vh; max-height: 86dvh; padding: 16px 14px; }
+  .modal-close { width: 34px; height: 34px; font-size: 15px; }
+  .modal-title { font-size: 17px; letter-spacing: 2px; }
+  .help-sec { font-size: 13px; line-height: 1.9; }
+  #toast-root {
+    top: calc(54px + env(safe-area-inset-top));
+    right: 10px; left: 10px;
+    align-items: flex-end;
+  }
+  .toast { max-width: min(320px, 82vw); font-size: 13px; }
+
+  /* 超窄屏标题字 */
+  .title-name { font-size: clamp(28px, 9vw, 36px); letter-spacing: clamp(4px, 2vw, 8px); }
+  .title-menu { width: min(280px, 78vw); }
+}
+
+/* 手机横屏 / 矮视口：再压一档。竖排空间不够，日志栏隐藏（信息由浮动数字/Toast 承载），
+   保证战斗界面一屏放下、互不遮挡 */
+@media (max-height: 500px) {
+  #logbar, .c-itembar { display: none; }
+  .view { padding: 8px 10px; }
+  #view-combat { padding: 6px 8px 4px; gap: 4px; }
+  .c-enemies { gap: 8px; }
+  .enemy-card { width: 118px; padding: 3px 5px 4px; }
+  .enemy-card.boss { width: 138px; }
+  .e-art { font-size: 18px; }
+  .e-name { font-size: 11px; margin: 1px 0 2px; }
+  .e-intent { font-size: 10px; min-height: 13px; padding: 1px 6px; }
+  .c-mid { padding: 2px 8px; gap: 8px; }
+  .p-avatar { font-size: 20px; }
+  .p-energy { font-size: 13px; }
+  .e-chips, .p-chips { min-height: 0; } /* 空状态行不占位；出现状态时允许视图微滚 */
+  .c-hand-area { flex: 0 0 auto; } /* 手牌区不压缩：空间不足时整体滚动而非向上溢出遮挡 */
+  .card { width: 84px; height: 114px; padding: 4px; }
+  .card-cost { width: 20px; height: 20px; line-height: 18px; font-size: 11px; top: -6px; left: -4px; }
+  .card-name { font-size: 11px; margin-top: 3px; }
+  .card-type { margin: 1px 0 2px; }
+  .card-desc { font-size: 9px; line-height: 1.4; margin-top: 3px; }
+  .c-hand { min-height: 120px; padding-top: 6px; }
+  .c-controls { margin-top: 0; gap: 4px 6px; }
+  .pile-chip { font-size: 10px; padding: 2px 7px; }
+  .endturn-btn { font-size: 13px; padding: 6px 14px; }
 }

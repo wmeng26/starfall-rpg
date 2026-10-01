@@ -724,7 +724,7 @@ const Combat = {
       '<span class="pile-chip">🂠 抽牌堆 ' + C.draw.length + '</span>' +
       '<span class="pile-chip">🗑 弃牌堆 ' + C.discard.length + '</span>' +
       '<span class="pile-chip">回目 ' + C.turn + '</span>' +
-      '<button class="endturn-btn" id="btn-endturn"' + (C.busy || C.over ? ' disabled' : '') + '>结束回合 (E)</button>' +
+      '<button class="endturn-btn" id="btn-endturn"' + (C.busy || C.over ? ' disabled' : '') + '>结束回合<span class="kbd-hint"> (E)</span></button>' +
       '</div>';
 
     html += '</div>';

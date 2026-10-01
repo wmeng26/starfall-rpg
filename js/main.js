@@ -23,6 +23,11 @@ const Main = {
     $('#btn-menu').onclick = () => this.menuModal();
     $('#btn-panel').onclick = () => this.togglePanel();
 
+    /* 拉宽窗口（如手机横屏超宽/桌面）时收回抽屉，避免面板残留遮挡 */
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 760) this.togglePanel(false);
+    });
+
     this.showTitle();
   },
 
