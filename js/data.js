@@ -81,8 +81,20 @@ DATA.CARDS = {
   triple_shot:     { id: 'triple_shot', name: '连珠三矢', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'enemy', fx: { dmg: 4, times: 3 }, desc: '造成 4 点伤害，共 3 次。' },
   poison_rain:     { id: 'poison_rain', name: '淬毒箭雨', cost: 2, type: 'attack', cls: 'ranger', rarity: 'rare', target: 'all', fx: { dmgAll: 4, statusAllEnemy: { poison: 2 } }, desc: '对所有敌人造成 4 点伤害，给予 2 层中毒。' },
 
+  /* —— 战士（续） —— */
+  shield_bash: { id: 'shield_bash', name: '盾击', cost: 1, type: 'attack', cls: 'warrior', rarity: 'common', target: 'enemy', fx: { dmg: 5, block: 5 }, desc: '造成 5 点伤害，获得 5 点护甲。' },
+
+  /* —— 法师（续） —— */
+  fire_lance:  { id: 'fire_lance', name: '炎枪', cost: 2, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 8, times: 2 }, desc: '凝聚火焰掷出，造成 8 点伤害，共 2 次。' },
+
+  /* —— 游侠（续） —— */
+  herbal_shot:  { id: 'herbal_shot', name: '药箭', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'enemy', fx: { dmg: 4, heal: 4 }, desc: '造成 4 点伤害，恢复 4 点生命。' },
+  scatter_shot: { id: 'scatter_shot', name: '散射', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'all', fx: { dmgAll: 4 }, desc: '对所有敌人造成 4 点伤害。' },
+
   /* —— 中立 —— */
   first_aid:      { id: 'first_aid', name: '急救', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 9 }, desc: '恢复 9 点生命。' },
+  second_wind:    { id: 'second_wind', name: '回气', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 5, draw: 1 }, desc: '调整呼吸，恢复 5 点生命，抽 1 张牌。' },
+  starlight:      { id: 'starlight', name: '微光', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { block: 4, cleanse: true }, desc: '一小捧星光落肩：清除自身负面状态，获得 4 点护甲。' },
   energy_crystal: { id: 'energy_crystal', name: '能量水晶', cost: 0, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { energy: 2 }, desc: '本回合获得 2 点行动力。' },
   shadow_strike:  { id: 'shadow_strike', name: '影袭', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'enemy', fx: { dmg: 8 }, desc: '造成 8 点伤害。' },
   star_dust:      { id: 'star_dust', name: '星屑飞尘', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'all', fx: { dmgAll: 5, statusAllEnemy: { poison: 1 } }, desc: '对所有敌人造成 5 点伤害，给予 1 层中毒。' },
@@ -115,6 +127,12 @@ DATA.CARDS = {
   poison_arrow_up:  { id: 'poison_arrow_up', name: '淬毒箭+', up: true, base: 'poison_arrow', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'enemy', fx: { dmg: 4, statusEnemy: { poison: 4 } }, desc: '淬炼：造成 4 点伤害，给予 4 层中毒。' },
   swift_retreat_up: { id: 'swift_retreat_up', name: '灵巧后跃+', up: true, base: 'swift_retreat', cost: 1, type: 'skill', cls: 'ranger', rarity: 'common', target: 'self', fx: { block: 6, statusAllEnemy: { weak: 1 } }, desc: '淬炼：获得 6 点护甲，所有敌人获得 1 层虚弱。' },
   first_aid_up:     { id: 'first_aid_up', name: '急救+', up: true, base: 'first_aid', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 14 }, desc: '淬炼：恢复 14 点生命。' },
+  shield_bash_up:   { id: 'shield_bash_up', name: '盾击+', up: true, base: 'shield_bash', cost: 1, type: 'attack', cls: 'warrior', rarity: 'common', target: 'enemy', fx: { dmg: 7, block: 7 }, desc: '淬炼：造成 7 点伤害，获得 7 点护甲。' },
+  fire_lance_up:    { id: 'fire_lance_up', name: '炎枪+', up: true, base: 'fire_lance', cost: 2, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 11, times: 2 }, desc: '淬炼：造成 11 点伤害，共 2 次。' },
+  herbal_shot_up:   { id: 'herbal_shot_up', name: '药箭+', up: true, base: 'herbal_shot', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'enemy', fx: { dmg: 5, heal: 6 }, desc: '淬炼：造成 5 点伤害，恢复 6 点生命。' },
+  scatter_shot_up:  { id: 'scatter_shot_up', name: '散射+', up: true, base: 'scatter_shot', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'all', fx: { dmgAll: 6 }, desc: '淬炼：对所有敌人造成 6 点伤害。' },
+  second_wind_up:   { id: 'second_wind_up', name: '回气+', up: true, base: 'second_wind', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 8, draw: 1 }, desc: '淬炼：恢复 8 点生命，抽 1 张牌。' },
+  starlight_up:     { id: 'starlight_up', name: '微光+', up: true, base: 'starlight', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { block: 6, cleanse: true }, desc: '淬炼：清除自身负面状态，获得 6 点护甲。' },
 
   /* —— 诅咒 ——
      无法打出，只会占据抽牌位；drain:N = 回合结束时仍在手中则失去 N 点生命。
@@ -150,6 +168,8 @@ DATA.ITEMS = {
   star_dew:      { id: 'star_dew', name: '星辉露珠', art: '🌟', desc: '恢复 40 点生命。带着一点点星屑的甜。', use: { heal: 40 } },
   firebomb:      { id: 'firebomb', name: '火焰瓶', art: '🔥', desc: '对一名敌人造成 16 点伤害。（战斗）', use: { dmg: 16 }, combatOnly: true, price: 35 },
   energy_potion: { id: 'energy_potion', name: '能量药水', art: '⚡', desc: '获得 2 点行动力。（战斗）', use: { energy: 2 }, combatOnly: true, price: 50 },
+  rage_draught:  { id: 'rage_draught', name: '蛮力药水', art: '🧴', desc: '获得 2 层力量。（战斗）', use: { statusSelf: { strength: 2 } }, combatOnly: true, price: 50 },
+  stone_draught: { id: 'stone_draught', name: '岩肤药水', art: '🪨', desc: '获得 12 点护甲。（战斗）', use: { block: 12 }, combatOnly: true, price: 45 },
   antidote:      { id: 'antidote', name: '解毒草', art: '🌿', desc: '清除自身负面状态。（战斗）', use: { cleanse: true }, combatOnly: true, price: 25 },
   star_shard:    { id: 'star_shard', name: '星核碎片', art: '💠', desc: '任务物品。温热，像一颗小小的心脏。', quest: true },
   miner_note:    { id: 'miner_note', name: '矿工的遗嘱', art: '📜', desc: '记着矿坑深处的传闻。', quest: true },
@@ -158,11 +178,12 @@ DATA.ITEMS = {
 /* ============================ 遗物 ============================
    星尘遗物：被动生效的稀有物件，无需装备，整局持续有效。
    效果字段（引擎在各钩子处读取，可多件叠加）:
-     startBlock / startStrength / enemyVuln / startLossHp  战斗开始
-     maxEnergy / energyFirst / drawFirst / turnHeal         回合资源
-     poisonPlus（你的中毒 +N 层）/ thorns（受击反弹 N 点）
-     winHeal / goldPct / xpPct                              战斗胜利
-     check: { stat, v }                                     属性检定加值
+     startBlock / startStrength / enemyVuln / enemyWeak / startLossHp  战斗开始
+     maxEnergy / energyFirst / drawFirst / turnDraw / turnHeal         回合资源
+     poisonPlus（你的中毒 +N 层）/ vulnPlus（你的易伤 +N 层）
+     thorns（受击反弹 N 点）/ killHeal（敌人倒下时回复 N 点）
+     winHeal / goldPct / xpPct                                        战斗胜利
+     check: { stat, v }                                               属性检定加值
 ============================================================ */
 DATA.RELICS = {
   silver_tongue:  { id: 'silver_tongue', name: '银铃舌', icon: '🔔', startBlock: 3, desc: '战斗开始时获得 3 点护甲。聋伯的手艺——铃响之处，雾不敢近。' },
@@ -178,6 +199,10 @@ DATA.RELICS = {
   map_shard:      { id: 'map_shard', name: '星图残页', icon: '🗺️', xpPct: 25, desc: '战斗获得的经验 +25%。朱砂圈住的地方，比任何课堂都教得多。' },
   hourglass:      { id: 'hourglass', name: '星辉沙漏', icon: '⏳', energyFirst: 1, desc: '每场战斗的首回合 +1 行动力。沙漏里的光永远流不完——塔的时间没有停过。' },
   worm_eye:       { id: 'worm_eye', name: '王虫的独眼', icon: '🟣', maxEnergy: 1, startLossHp: 3, desc: '行动力上限 +1；每场战斗开始时失去 3 点生命。它仍在山腹深处注视着你。' },
+  amber_charm:    { id: 'amber_charm', name: '琥珀坠饰', icon: '🟠', killHeal: 3, desc: '敌人倒下时，恢复 3 点生命。琥珀芯里封着一只发光的萤虫——它还活着，还愿意替你亮着。' },
+  echo_crystal:   { id: 'echo_crystal', name: '回响晶簇', icon: '💠', turnDraw: 1, desc: '每个回合多抽 1 张牌。敲一敲它，它会用一拍之后的余音回答。' },
+  dew_ring:       { id: 'dew_ring', name: '雾露指环', icon: '💧', enemyWeak: 1, desc: '战斗开始时，所有敌人获得 1 层虚弱。雾凝成的指环——戴上它，连敌手的动作都慢了半拍。' },
+  rusted_goad:    { id: 'rusted_goad', name: '锈刺赶棒', icon: '🔩', vulnPlus: 1, desc: '你施加的易伤额外 +1 层。棒上的倒刺早就锈死了，可兽还记得疼。' },
 };
 
 /* ============================ 敌人 ============================
@@ -230,6 +255,22 @@ DATA.ENEMIES = {
     { name: '暗影箭', dmg: 7, w: 3 },
     { name: '削弱', dmg: 3, toPlayer: { weak: 1 }, w: 2 },
     { name: '暗影屏障', block: 8, w: 1 },
+  ]},
+  /* —— 矿坑异闻与深处 —— */
+  husk:       { id: 'husk', name: '空壳矿工', art: '🧟', hp: 30, xp: 22, gold: [10, 18], moves: [
+    { name: '锈镐挥击', dmg: 8, w: 3 },
+    { name: '抽搐乱舞', dmg: 3, times: 3, w: 2 },
+    { name: '死硬不退', block: 6, w: 1 },
+  ]},
+  moss_golem: { id: 'moss_golem', name: '苔背石蜗', art: '🐌', hp: 40, xp: 28, gold: [14, 22], moves: [
+    { name: '岩躯碾压', dmg: 10, w: 3 },
+    { name: '缩壳', block: 11, w: 2 },
+    { name: '腐苔喷吐', toPlayer: { poison: 2 }, w: 2 },
+  ]},
+  fog_shade:  { id: 'fog_shade', name: '雾魉', art: '🌁', hp: 24, xp: 21, gold: [10, 18], moves: [
+    { name: '雾刃', dmg: 8, w: 3 },
+    { name: '蚀心低语', dmg: 2, toPlayer: { weak: 1, vuln: 1 }, w: 2 },
+    { name: '散作浓雾', block: 7, w: 1 },
   ]},
   /* —— 星陨林 —— */
   mist_wisp:  { id: 'mist_wisp', name: '雾灵', art: '🌫️', hp: 16, xp: 12, gold: [4, 8], moves: [
@@ -315,6 +356,10 @@ DATA.GROUPS = {
   skeleton_spider:['skeleton', 'spider'],
   statue:         ['statue'],
   lurker:         ['lurker', 'bat'],
+  husks:          ['husk', 'husk'],
+  moss_golem:     ['moss_golem'],
+  shade_husk:     ['fog_shade', 'husk'],
+  husk_ghost:     ['husk'],
   grove_wisps:    ['mist_wisp', 'mist_wisp'],
   moth_swarm:     ['star_moth', 'star_moth', 'star_moth'],
   mist_stag:      ['mist_stag'],
@@ -332,7 +377,7 @@ DATA.GROUPS = {
 /* 随机遭遇池 */
 DATA.ENCOUNTERS = {
   wild: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'moth_swarm'],
-  mine: ['skeletons', 'spiders', 'bats', 'skeleton_spider', 'statue', 'lurker'],
+  mine: ['skeletons', 'spiders', 'bats', 'skeleton_spider', 'statue', 'lurker', 'husks', 'moss_golem', 'shade_husk'],
 };
 
 /* ============================ 迷雾回廊（无尽模式） ============================
@@ -343,8 +388,8 @@ DATA.ENCOUNTERS = {
 DATA.ENDLESS_TIERS = [
   { min: 1,  max: 2,   groups: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'spiders', 'moth_swarm'] },
   { min: 3,  max: 4,   groups: ['skeletons', 'spiders', 'skeleton_spider', 'bandits', 'grove_wisps', 'lurker'] },
-  { min: 5,  max: 7,   groups: ['statue', 'lurker', 'tower_wraiths', 'mist_stag', 'skeleton_spider'] },
-  { min: 8,  max: 999, groups: ['statue', 'tower_wraiths', 'wall_spawns', 'grove_wisps', 'skeleton_spider', 'lurker'] },
+  { min: 5,  max: 7,   groups: ['statue', 'lurker', 'tower_wraiths', 'mist_stag', 'skeleton_spider', 'moss_golem'] },
+  { min: 8,  max: 999, groups: ['statue', 'tower_wraiths', 'wall_spawns', 'grove_wisps', 'skeleton_spider', 'lurker', 'husks', 'shade_husk'] },
 ];
 /* 回响头目轮换：第 5 / 10 / 15 / 20 层，之后循环（缩放继续加深） */
 DATA.ENDLESS_BOSSES = ['endless_boss_worm', 'endless_boss_morgan', 'tower_guard', 'wall_thing'];
@@ -366,6 +411,12 @@ function endlessGroupKey(depth) {
    （special 'endless_pass'，层数照常 +1），要么直接接入一场战斗（win 'endless_clear'）。
    见过的异变种类经 Endless.markEvent 跨周目记录，供成就判定。 */
 DATA.ENDLESS_EVENTS = ['ev_stele', 'ev_campfire', 'ev_merchant', 'ev_thief', 'ev_crack', 'ev_ambush'];
+
+/* ============================ 矿坑异闻（侧巷随机事件） ============================
+   矿坑一层可以「搜寻侧巷与旧工棚」：调度场景 mine_explore 每次进入
+   从未触发的异闻中随机路由一则；每则异闻在同一次冒险里只出现一次
+   （flags.me_<id>），六则全部探访后落入 mine_explore_empty。 */
+DATA.MINE_EVENTS = ['me_cart', 'me_moss', 'me_ghost', 'me_collapse', 'me_husk_hut', 'me_pool'];
 
 function isPrime(n) {
   if (n < 2) return false;
@@ -544,6 +595,7 @@ DATA.SCENES = {
       { text: '🧤 迅捷护腕 —— 65 金币', sub: '饰品 · 敏捷 +1', fx: { gold: -65, gear: 'amulet_agi' }, requireGold: 65, once: 'bought_agi', go: 'smith' },
       { text: '✨ 星屑香囊 —— 85 金币', sub: '遗物 · 开战时全体敌人易伤 1 层', fx: { gold: -85, relic: 'star_pouch' }, requireGold: 85, show: (s) => !hasRelic(s, 'star_pouch'), go: 'smith' },
       { text: '💍 荆棘指环 —— 110 金币', sub: '遗物 · 受击反弹 3 点伤害', fx: { gold: -110, relic: 'thorn_ring' }, requireGold: 110, show: (s) => !hasRelic(s, 'thorn_ring'), go: 'smith' },
+      { text: '🔩 锈刺赶棒 —— 95 金币', sub: '遗物 · 你施加的易伤额外 +1 层', fx: { gold: -95, relic: 'rusted_goad' }, requireGold: 95, show: (s) => !hasRelic(s, 'rusted_goad'), go: 'smith' },
       { text: '🂠 卡牌【破甲】—— 80 金币', sub: '加入牌组：1 费 · 4 伤 + 2 易伤', fx: { gold: -80, card: 'pierce' }, requireGold: 80, once: 'bought_pierce', go: 'smith' },
       {
         text: '⚒️ 淬炼卡牌 —— 60 金币',
@@ -847,6 +899,7 @@ DATA.SCENES = {
       : '矿坑一层。镐子散落一地，轨道锈死在半途。\n\n深处隐约有搏动声，缓慢、沉重，像一颗埋在山腹里的巨大心脏。\n\n（战胜敌人可获得金币、经验与卡牌奖励。）',
     choices: [
       { text: '🕯️ 探索隧道', sub: '遭遇战', combat: 'random:mine', win: 'depths_after' },
+      { text: '🔎 搜寻侧巷与旧工棚', sub: '矿坑异闻 · 每处机缘每次冒险只出现一次', go: 'mine_explore' },
       { text: '👂 聆听墙中的搏动', sub: '🎲 智力检定 · DC 11', once: 'listened_wall',
         check: { stat: 'int', dc: 11 },
         success: { text: '你把手贴上岩壁。搏动的节律……有规律！循着节律摸索，一处暗门訇然开启——前任矿监的私库！', go: 'secret_room' },
@@ -915,6 +968,125 @@ DATA.SCENES = {
     text: '你清点战利品，靠着朽坏的支柱稍作喘息。\n\n雾从巷道深处漫上来，搏动声愈发清晰。',
     choices: [
       { text: '↩️ 返回矿坑一层', go: 'mine_depths' },
+    ],
+  },
+
+  /* ============ 支线 · 矿坑异闻（侧巷随机事件） ============
+     调度场景自身不渲染：onEnter 计入探索次数，并路由到一则未触发的异闻。
+     事件内的战斗胜后统一回 depths_after；机缘与代价经 fx 结算。 */
+  mine_explore: {
+    onEnter: (s) => {
+      s.stats.explored = (s.stats.explored || 0) + 1;
+      const pool = DATA.MINE_EVENTS.filter((id) => !s.flags['me_' + id]);
+      if (!pool.length) return 'mine_explore_empty';
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      s.flags['me_' + id] = true;
+      return id;
+    },
+    text: '你举着矿灯钻进主巷道旁的岔口。',
+    choices: [],
+  },
+
+  mine_explore_empty: {
+    text: '侧巷与旧工棚都搜遍了——只剩风声、滴水声，和岩层深处隐约的搏动。\n\n矿灯的光晕缩成一圈，雾从主巷道漫了过来。',
+    choices: [
+      { text: '⚔️ 顺势清剿雾里游荡的东西', sub: '遭遇战', combat: 'random:mine', win: 'depths_after' },
+      { text: '↩️ 回到矿坑一层', go: 'mine_depths' },
+    ],
+  },
+
+  /* —— 异闻 · 倾覆的矿车 —— */
+  me_cart: {
+    text: '巷道拐角，一辆矿车侧翻在锈死的轨道上。车斗里还堆着没来得及运出的矿石，几块在幽暗里泛着星点似的微光。\n\n车把手上挂着半盏矿灯，灯油还没有干透。星坠之后，没有人回来收车。',
+    choices: [
+      {
+        text: '💪 撬开车斗的锁扣', sub: '🎲 力量检定 · DC 11',
+        check: { stat: 'pow', dc: 11 },
+        success: { text: '你别住车轮，撬棍一别——锁扣应声崩开，星点矿石滚了一地。矿石的缝隙里还塞着一瓶没开封的火油。', fx: { gold: 45, item: 'firebomb' }, go: 'mine_depths' },
+        fail: { text: '车斗滑了半尺，正砸在你的脚背上。你龇着牙，捡了几块滚落的碎矿。', fx: { hp: -6, gold: 18 }, go: 'mine_depths' },
+      },
+      { text: '🏮 只取走灯边的火油瓶', sub: '稳妥为上', fx: { item: 'firebomb' }, go: 'mine_depths' },
+    ],
+  },
+
+  /* —— 异闻 · 星尘苔壁 —— */
+  me_moss: {
+    text: '半面岩壁覆满了发光的苔藓，一明一灭，像谁把星空揉碎了抹在石头上。\n\n苔层深处透出一点暖色的光，和星屑的冷芒不太一样——那点暖光，像是在等你。',
+    choices: [
+      {
+        text: '🌟 小心剥开苔层，探那点暖光', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '苔衣完整地掀开——一枚拳头大的琥珀嵌在岩缝里，芯里封着一只发光的萤虫。它还活着，还亮着。', fx: { relic: 'amber_charm', xp: 15 }, go: 'mine_depths' },
+        fail: { text: '苔粉簌簌落了你一头一脸，眼睛辣了半天。你学乖了，只刮了一层苔衣备着。', fx: { hp: -5, xp: 5 }, go: 'mine_depths' },
+      },
+      { text: '🧪 刮一捧苔露装瓶', sub: '星辉露珠 · 恢复 40 点生命', fx: { item: 'star_dew' }, go: 'mine_depths' },
+    ],
+  },
+
+  /* —— 异闻 · 巷道尽头的矿灯 —— */
+  me_ghost: {
+    text: '巷道尽头浮着一盏老式矿灯。灯下的阴影里坐着一个人形，正低头擦拭一柄锈镐。\n\n它没有抬头，只是用镐柄敲了敲灯罩——两长，一短。\n\n矿工的灯语：安全，可以通行。',
+    choices: [
+      {
+        text: '💬 用镐柄回敲：两长，一短', sub: '🎲 魅力检定 · DC 12',
+        check: { stat: 'cha', dc: 12 },
+        success: { text: '你蹲下来，在轨道上敲出同样的节奏。人影把锈镐搁在地上，朝你比了个"向前"的手势，散成一缕白雾。\n\n镐柄落处，一枚仍在震颤的晶簇滚了出来。', fx: { relic: 'echo_crystal', xp: 20 }, go: 'mine_depths' },
+        fail: { text: '灯焰倏地转绿。阴影里的东西停下了擦拭的手——它缓缓抬起了头。', combat: 'husk_ghost', win: 'depths_after' },
+      },
+      { text: '🏃 退开，不打扰它', sub: '灯语不是喊给你的 · 少量经验', fx: { xp: 5 }, go: 'mine_depths' },
+    ],
+  },
+
+  /* —— 异闻 · 塌落的窄道 —— */
+  me_collapse: {
+    text: '前方的窄道塌了半边。碎岩之间卡着一只补给箱，箱盖半开，帆布绑带还很新——塌方是最近的事。\n\n头顶的支撑木在一根根呻吟，落灰簌簌。',
+    choices: [
+      {
+        text: '🌀 贴着支撑木冲过去抢箱子', sub: '🎲 敏捷检定 · DC 11',
+        check: { stat: 'agi', dc: 11 },
+        success: { text: '你在落灰砸下之前抢出了箱子——大半瓶治疗药剂，和一袋没来得及上缴的工钱。', fx: { item: 'big_potion', gold: 30 }, go: 'mine_depths' },
+        fail: { text: '半架支护塌了下来，气浪把你掀了出去。你拖着擦伤的腿，只捞回散落的一小把铜币。', fx: { hp: -10, gold: 15 }, go: 'mine_depths' },
+      },
+      {
+        text: '🧱 撬松另半边支撑木，掏完就跑', sub: '🎲 力量检定 · DC 13',
+        check: { stat: 'pow', dc: 13 },
+        success: { text: '支撑木应声而断，整个塌层面轰然砸落——你在烟尘合拢前滚了出来，怀里是整只补给箱。箱底压着一瓶蛮力药水。', fx: { item: 'rage_draught', gold: 40 }, go: 'mine_depths' },
+        fail: { text: '撬棍打滑，塌方提前砸了下来。你被埋了半截，好半天才从岩堆里爬出来。', fx: { hp: -12 }, go: 'mine_depths' },
+      },
+    ],
+  },
+
+  /* —— 异闻 · 空壳的工棚 —— */
+  me_husk_hut: {
+    text: '一座用坑木和油布搭成的工棚歪在巷道凹处，门帘半掀。棚里传出规律的、像打鼾一样的声音。\n\n——雾隐镇的矿工，早在星坠之前就不会在矿坑里睡觉了。',
+    choices: [
+      {
+        text: '🤫 憋住呼吸，摸进去搜刮', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '"鼾声"是雾从棚顶的破洞漏下来的声音。棚里早已没人——木钩上挂着一只凝着雾露的旧指环，枕边散着几枚铜币。', fx: { relic: 'dew_ring', gold: 25 }, go: 'mine_depths' },
+        fail: { text: '铺盖里"睡"着的东西睁开了眼——皮囊还穿着矿工的工装，脸已经不属于任何人。', combat: 'husk_ghost', win: 'depths_after' },
+      },
+      { text: '⚔️ 一脚踹翻门帘，正面进去', sub: '遭遇战 · 空壳矿工', combat: 'husk_ghost', win: 'depths_after' },
+    ],
+  },
+
+  /* —— 异闻 · 巷道深处的暗泉 —— */
+  me_pool: {
+    text: '巷道尽头积着一汪泉。水面黑得像墨，水却清得能照见你自己的脸——泉底沉着几枚旧币，更深的地方，有一点微光。\n\n风从水面吹上来，带着一点很淡的甜味。',
+    choices: [
+      { text: '💧 掬一口解渴', sub: '恢复 35% 生命', fx: { healPct: 35 }, go: 'mine_depths' },
+      {
+        text: '🪙 摸进泉底捞旧币', sub: '🎲 敏捷检定 · DC 13',
+        check: { stat: 'agi', dc: 13 },
+        success: { text: '指尖浸在水里却不觉得凉。你摸出六枚磨亮的旧币——每一枚都刻着风铃的纹样。', fx: { gold: 60 }, go: 'mine_depths' },
+        fail: { text: '水底的东西攥了一下你的手腕。你抽手时带起的水花溅进嘴里——那点甜味，不对。', fx: { hp: -6, curse: 'star_itch' }, go: 'mine_depths' },
+      },
+      {
+        text: '🌊 憋一口气，潜向泉底的微光', sub: '🎲 敏捷检定 · DC 14',
+        check: { stat: 'agi', dc: 14 },
+        success: { text: '微光是一小簇坠在泉底的星屑。你顺手把它拢进瓶里——凝成了一整瓶星辉露珠，瓶底还压着几枚旧币。', fx: { item: 'star_dew', gold: 40 }, go: 'mine_depths' },
+        fail: { text: '泉底的冷像一只手，攥着你的脚踝往下拽。你挣出水面时，鼻子里全是血腥气。', fx: { hp: -10 }, go: 'mine_depths' },
+      },
     ],
   },
 
@@ -1064,6 +1236,8 @@ DATA.SCENES = {
       { text: '🍶 大治疗药水 —— 65 金币', sub: '恢复 60 点生命', fx: { gold: -65, item: 'big_potion' }, requireGold: 65, once: 'shop_bp', go: 'tower_gate' },
       { text: '⏱️ 矿监的怀表 —— 80 金币', sub: '遗物 · 首回合多抽 1 张牌', fx: { gold: -80, relic: 'watch' }, requireGold: 80, show: (s) => !hasRelic(s, 'watch'), go: 'tower_gate' },
       { text: '⚡ 能量药水 —— 50 金币', sub: '战斗中 +2 行动力', fx: { gold: -50, item: 'energy_potion' }, requireGold: 50, once: 'shop_ep', go: 'tower_gate' },
+      { text: '🧴 蛮力药水 —— 50 金币', sub: '战斗中获得 2 层力量', fx: { gold: -50, item: 'rage_draught' }, requireGold: 50, once: 'shop_rage', go: 'tower_gate' },
+      { text: '🪨 岩肤药水 —— 45 金币', sub: '战斗中获得 12 点护甲', fx: { gold: -45, item: 'stone_draught' }, requireGold: 45, once: 'shop_stone', go: 'tower_gate' },
       { text: '🌿 解毒草 —— 25 金币', sub: '战斗中清除负面状态', fx: { gold: -25, item: 'antidote' }, requireGold: 25, once: 'shop_ad', go: 'tower_gate' },
       { text: '🥋 锁子甲 —— 120 金币', sub: '护甲 · 护甲值 +3', fx: { gold: -120, gear: 'chain_mail' }, requireGold: 120, show: (s) => s.player.gear.armor !== 'chain_mail', go: 'tower_gate' },
       { text: '🂠 高阶卡牌 —— 100 金币', subFn: () => '职业限定 · 加入牌组', fx: { gold: -100, special: 'class_card' }, requireGold: 100, once: 'shop_card', go: 'tower_gate' },
@@ -1489,8 +1663,11 @@ DATA.ACHIEVEMENTS = {
   ending_dark:   { id: 'ending_dark', icon: '👑', name: '结局 · 新王', desc: '吞下黑暗，成为新守塔人。', test: (s) => s.flags.core === 'absorb' && String(s.scene).indexOf('ending') === 0 },
   ending_peace:  { id: 'ending_peace', icon: '🕊️', name: '结局 · 长夜', desc: '封存碎片，雾依旧，镇犹存。', test: (s) => s.scene === 'ending_peace' },
   codex_cards:   { id: 'codex_cards', icon: '📖', name: '阅牌无数', desc: '冒险图鉴累计收录 20 种卡牌。', test: () => Codex.count('cards') >= 20 },
-  codex_relics:  { id: 'codex_relics', icon: '⚱️', name: '星尘全图', desc: '冒险图鉴收录全部 13 件星尘遗物。', test: () => Codex.count('relics') >= Object.keys(DATA.RELICS).length },
+  codex_relics:  { id: 'codex_relics', icon: '⚱️', name: '星尘全图', desc: '冒险图鉴收录全部 ' + Object.keys(DATA.RELICS).length + ' 件星尘遗物。', test: () => Codex.count('relics') >= Object.keys(DATA.RELICS).length },
   codex_enemies: { id: 'codex_enemies', icon: '👹', name: '雾中百景', desc: '冒险图鉴累计收录 10 种敌人。', test: () => Codex.count('enemies') >= 10 },
+  codex_enemies_15: { id: 'codex_enemies_15', icon: '🌄', name: '雾中百景·贰', desc: '冒险图鉴累计收录 15 种敌人。', test: () => Codex.count('enemies') >= 15 },
+  explore_5:     { id: 'explore_5', icon: '🔎', name: '异闻采集者', desc: '在矿坑搜寻侧巷，触发 5 则矿坑异闻。', test: (s) => (s.stats.explored || 0) >= 5 },
+  relic_8:       { id: 'relic_8', icon: '🏺', name: '星尘满囊', desc: '同时持有 8 件星尘遗物。', test: (s) => Array.isArray(s.relics) && s.relics.length >= 8 },
   cycle_2:       { id: 'cycle_2', icon: '🔄', name: '轮回之始', desc: '完成第 2 周目。', test: () => Cycle.count() >= 2 },
   cycle_3:       { id: 'cycle_3', icon: '♾️', name: '雾中轮回', desc: '完成第 3 周目。', test: () => Cycle.count() >= 3 },
   diff_hard:     { id: 'diff_hard', icon: '🌫️', name: '试炼成王', desc: '以迷雾试炼（困难）难度通关任一结局。', test: (s) => s.diff === 1 && String(s.scene).indexOf('ending') === 0 },

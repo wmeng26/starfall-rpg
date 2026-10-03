@@ -349,8 +349,8 @@ function relicSum(state) {
   for (const id of state.relics) {
     const r = DATA.RELICS[id];
     if (!r) continue;
-    for (const k of ['startBlock', 'startStrength', 'enemyVuln', 'startLossHp', 'maxEnergy', 'energyFirst',
-                     'drawFirst', 'turnHeal', 'poisonPlus', 'thorns', 'winHeal', 'goldPct', 'xpPct']) {
+    for (const k of ['startBlock', 'startStrength', 'enemyVuln', 'enemyWeak', 'startLossHp', 'maxEnergy', 'energyFirst',
+                     'drawFirst', 'turnDraw', 'turnHeal', 'poisonPlus', 'vulnPlus', 'thorns', 'killHeal', 'winHeal', 'goldPct', 'xpPct']) {
       if (r[k]) out[k] = (out[k] || 0) + r[k];
     }
   }

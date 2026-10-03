@@ -139,6 +139,12 @@ const Combat = {
         }
         UI.log('✨ 星屑灼目：所有敌人获得 ' + R.enemyVuln + ' 层易伤', 'gain');
       }
+      if (R.enemyWeak) {
+        for (const e of C.enemies) {
+          if (e.hp > 0) this.addStatus(e, { weak: R.enemyWeak });
+        }
+        UI.log('💧 雾露沾襟：所有敌人获得 ' + R.enemyWeak + ' 层虚弱', 'gain');
+      }
       if (p.hp <= 0) { this.renderAll(); this.lose(); return; }
     }
 
@@ -160,7 +166,7 @@ const Combat = {
       e.intent = this.pickMove(e);
     }
 
-    this.drawCards(5 + (C.turn === 1 ? (R.drawFirst || 0) : 0));
+    this.drawCards(5 + (C.turn === 1 ? (R.drawFirst || 0) : 0) + (R.turnDraw || 0));
     C.busy = false;
     this.renderAll();
   },
@@ -270,20 +276,21 @@ const Combat = {
       }
     }
 
-    /* 目标状态（低语的骨笛：玩家施加的中毒额外 +N 层） */
-    const boostPoison = (st) => {
-      if (!(C.relic && C.relic.poisonPlus) || !st.poison) return st;
+    /* 状态增幅（低语的骨笛：中毒 +N 层；锈刺赶棒：易伤 +N 层） */
+    const boostStatus = (st) => {
+      if (!C.relic || (!st.poison && !st.vuln)) return st;
       const st2 = Object.assign({}, st);
-      st2.poison += C.relic.poisonPlus;
+      if (st.poison && C.relic.poisonPlus) st2.poison += C.relic.poisonPlus;
+      if (st.vuln && C.relic.vulnPlus) st2.vuln += C.relic.vulnPlus;
       return st2;
     };
     if (fx.statusEnemy && target && target.hp > 0) {
-      this.addStatus(target, boostPoison(fx.statusEnemy));
+      this.addStatus(target, boostStatus(fx.statusEnemy));
       this.renderAll();
     }
     /* 全体敌人状态 */
     if (fx.statusAllEnemy) {
-      for (const e of C.enemies.filter((x) => x.hp > 0)) this.addStatus(e, boostPoison(fx.statusAllEnemy));
+      for (const e of C.enemies.filter((x) => x.hp > 0)) this.addStatus(e, boostStatus(fx.statusAllEnemy));
       this.renderAll();
     }
     /* 自身状态 / 护甲 / 恢复 / 抽牌 / 行动力 */
@@ -356,6 +363,7 @@ const Combat = {
     if (e.hp <= 0) {
       G.state.stats.kills += 1;
       UI.log('💀 ' + e.name + ' 倒下了', 'battle');
+      this.onKill();
       this.renderAll();
       await sleep(320);
     }
@@ -379,6 +387,12 @@ const Combat = {
     for (const k in st) {
       entity.statuses[k] = Math.min(9, (entity.statuses[k] || 0) + st[k]);
     }
+  },
+
+  /* 敌人死亡的统一钩子（琥珀坠饰：击杀回复生命） */
+  onKill() {
+    const R = this.C && this.C.relic;
+    if (R && R.killHeal) this.healPlayer(R.killHeal);
   },
 
   statusChips(st) {
@@ -436,7 +450,7 @@ const Combat = {
         UI.float(document.querySelector('[data-uid="' + e.uid + '"]'), '-' + pd + '(毒)', 'dmg');
         await sleep(420);
         if (!G.state || C.over) return;
-        if (e.hp <= 0) { G.state.stats.kills += 1; UI.log('💀 ' + e.name + ' 中毒身亡', 'battle'); continue; }
+        if (e.hp <= 0) { G.state.stats.kills += 1; UI.log('💀 ' + e.name + ' 中毒身亡', 'battle'); this.onKill(); continue; }
       }
 
       const move = e.intent || this.pickMove(e);
@@ -530,6 +544,7 @@ const Combat = {
       if (attacker.hp <= 0) {
         G.state.stats.kills += 1;
         UI.log('💀 ' + attacker.name + ' 被荆棘刺死了', 'battle');
+        this.onKill();
       }
     }
     this.renderAll();
@@ -584,7 +599,7 @@ const Combat = {
     let potionDrop = null;
     if (Math.random() < 0.28 && !C.enemies.some((e) => e.boss)) {
       const r = Math.random();
-      potionDrop = r < 0.55 ? 'potion' : r < 0.8 ? 'firebomb' : 'energy_potion';
+      potionDrop = r < 0.5 ? 'potion' : r < 0.72 ? 'firebomb' : r < 0.88 ? 'energy_potion' : 'stone_draught';
       G.state.items[potionDrop] = (G.state.items[potionDrop] || 0) + 1;
     }
 
@@ -667,6 +682,17 @@ const Combat = {
 
     if (use.heal) this.healPlayer(use.heal);
     if (use.energy) { C.energy += use.energy; this.renderAll(); }
+    if (use.block) {
+      C.player.block += use.block;
+      UI.float($('#p-block'), '🛡+' + use.block, 'block');
+      Sfx.play('block');
+      this.renderAll();
+    }
+    if (use.statusSelf) {
+      this.addStatus(C.player, use.statusSelf);
+      UI.float($('#p-avatar'), '⬆ 强化', 'buff');
+      this.renderAll();
+    }
     if (use.cleanse) {
       for (const k of ['poison', 'weak', 'vuln']) delete C.player.statuses[k];
       this.renderAll();

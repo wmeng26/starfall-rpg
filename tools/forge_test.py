@@ -232,7 +232,7 @@ with sync_playwright() as p:
     page.locator('.modal-close').last.click()
     page.wait_for_timeout(200)
 
-    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 32, '成就总数 32（29 + 淬炼/诅咒 ×3）')
+    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 35, '成就总数 35（29 + 淬炼/诅咒 ×3 + 异闻/遗物/图鉴 ×3）')
 
     browser.close()
 

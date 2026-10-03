@@ -120,7 +120,10 @@ for (const p in ENC) {
 /* 物品与装备 */
 for (const id in ITEMS) {
   const it = ITEMS[id];
-  if (it.use) for (const k in it.use) if (!['heal', 'dmg', 'energy', 'cleanse'].includes(k)) err('物品 ' + id + ' 未知使用效果: ' + k);
+  if (it.use) for (const k in it.use) {
+    if (!['heal', 'dmg', 'energy', 'cleanse', 'block', 'statusSelf'].includes(k)) err('物品 ' + id + ' 未知使用效果: ' + k);
+    if (k === 'statusSelf') for (const s in it.use[k]) if (!STATUSES.includes(s)) err('物品 ' + id + ' 未知状态: ' + s);
+  }
 }
 for (const id in GEAR) {
   const g = GEAR[id];
@@ -130,8 +133,8 @@ for (const id in GEAR) {
 
 /* 遗物 */
 const RELICS = DATA.RELICS;
-const RELIC_KEYS = ['startBlock', 'startStrength', 'enemyVuln', 'startLossHp', 'maxEnergy', 'energyFirst',
-                    'drawFirst', 'turnHeal', 'poisonPlus', 'thorns', 'winHeal', 'goldPct', 'xpPct', 'check'];
+const RELIC_KEYS = ['startBlock', 'startStrength', 'enemyVuln', 'enemyWeak', 'startLossHp', 'maxEnergy', 'energyFirst',
+                    'drawFirst', 'turnDraw', 'turnHeal', 'poisonPlus', 'vulnPlus', 'thorns', 'killHeal', 'winHeal', 'goldPct', 'xpPct', 'check'];
 for (const id in RELICS) {
   const r = RELICS[id];
   if (r.id !== id) err('遗物 id 不一致: ' + id);
@@ -208,6 +211,11 @@ for (const cid in (DATA.CLASS_CARDS || {})) {
 for (const id of (DATA.ENDLESS_EVENTS || [])) {
   if (!SCENES[id]) err('ENDLESS_EVENTS 未知异变场景: ' + id);
 }
+for (const id of (DATA.MINE_EVENTS || [])) {
+  if (!SCENES[id]) err('MINE_EVENTS 未知异闻场景: ' + id);
+}
+/* 调度场景：异闻调度须存在且能从未触发事件中路由 */
+if (DATA.MINE_EVENTS && DATA.MINE_EVENTS.length && !SCENES.mine_explore) err('缺少矿坑异闻调度场景 mine_explore');
 
 /* ---------- 3. 逻辑冒烟测试 ---------- */
 console.log('== 逻辑冒烟测试 ==');
@@ -274,7 +282,7 @@ if (cod.count() !== cod.count('cards') + cod.count('relics') + cod.count('enemie
 if (cod.total() !== Object.keys(CARDS).filter((id) => !CARDS[id].up).length + Object.keys(RELICS).length + Object.keys(ENEMIES).length) err('图鉴 total 与数据不一致（变体不应计入）');
 if (!cod.has('cards', 'strike') || cod.has('relics', 'watch')) err('Codex.has 判定失败');
 /* 图鉴向成就的 test 可执行且类型正确（须在含 state.js 的沙盒里调，test 引用 Codex） */
-for (const aid of ['codex_cards', 'codex_relics', 'codex_enemies']) {
+for (const aid of ['codex_cards', 'codex_relics', 'codex_enemies', 'codex_enemies_15']) {
   if (typeof sandbox.DATA.ACHIEVEMENTS[aid].test({}) !== 'boolean') err('成就 ' + aid + ' test 未返回布尔值');
 }
 console.log('  ✓ 图鉴 收录 / 去重 / 计数 通过');
@@ -316,6 +324,19 @@ const bestBefore = endl.best();
 if (!endl.reach(bestBefore + 3) || endl.best() !== bestBefore + 3) err('最深纪录未刷新');
 if (endl.reach(bestBefore + 1)) err('更浅深度不应刷新纪录');
 console.log('  ✓ 迷雾回廊 层数缩放 · 头目轮换 · 最深纪录 通过');
+
+/* 矿坑异闻：调度路由 / 每则一次 / 探索计数 / 探空回落 */
+const stme = sandbox.newGameState('warrior');
+const routed = new Set();
+for (let i = 0; i < DATA.MINE_EVENTS.length; i++) {
+  const dest = DATA.SCENES.mine_explore.onEnter(stme);
+  if (!DATA.MINE_EVENTS.includes(dest)) err('异闻调度路由到未知场景: ' + dest);
+  routed.add(dest);
+}
+if (routed.size !== DATA.MINE_EVENTS.length) err('异闻调度未覆盖全部事件: ' + JSON.stringify(Array.from(routed)));
+if (DATA.SCENES.mine_explore.onEnter(stme) !== 'mine_explore_empty') err('六则异闻触发后应落入 mine_explore_empty');
+if (stme.stats.explored !== DATA.MINE_EVENTS.length + 1) err('探索计数错误: ' + stme.stats.explored);
+console.log('  ✓ 矿坑异闻 调度路由 · 每则一次 · 探索计数 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
