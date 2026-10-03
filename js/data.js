@@ -418,6 +418,11 @@ DATA.ENDLESS_EVENTS = ['ev_stele', 'ev_campfire', 'ev_merchant', 'ev_thief', 'ev
    （flags.me_<id>），六则全部探访后落入 mine_explore_empty。 */
 DATA.MINE_EVENTS = ['me_cart', 'me_moss', 'me_ghost', 'me_collapse', 'me_husk_hut', 'me_pool'];
 
+/* ============================ 林间异闻（岔路口随机事件） ============================
+   与矿坑异闻同一套调度（forest_explore，flags.fe_<id>，每则一次），
+   事件发生在进矿坑之前的荒野——奖励更节制，风波也更轻。 */
+DATA.FOREST_EVENTS = ['fe_trapline', 'fe_hivetree', 'fe_hut', 'fe_moths', 'fe_stone', 'fe_wolfbones'];
+
 function isPrime(n) {
   if (n < 2) return false;
   for (let i = 2; i * i <= n; i++) if (n % i === 0) return false;
@@ -696,6 +701,7 @@ DATA.SCENES = {
       { text: '🌲 走黑松林', sub: '潜行与陷阱', go: 'forest' },
       { text: '⛰️ 走碎石山道', sub: '埋伏与谈判', go: 'mountain' },
       { text: '🦌 猎人小径', sub: '星屑微光 · 未知的支线', go: 'grove_path' },
+      { text: '🔎 搜寻岔路口四周', sub: '林间异闻 · 每处机缘每次冒险只出现一次', go: 'forest_explore' },
     ],
   },
 
@@ -767,6 +773,119 @@ DATA.SCENES = {
     text: '劫掠者的赃物袋里有些零钱，还有半张潮湿的矿坑地图——地图上，第七巷被红炭笔圈了三圈。\n\n风从矿坑的方向吹来，带着铁锈与腐土的气味。',
     choices: [
       { text: '⛏️ 前往矿坑入口', go: 'mine_entrance' },
+    ],
+  },
+
+  /* ============ 支线 · 林间异闻（岔路口随机事件） ============
+     调度与矿坑异闻一致：onEnter 计数并路由到一则未触发的异闻；
+     战斗胜后统一回岔路口。 */
+  forest_explore: {
+    onEnter: (s) => {
+      s.stats.forestExplored = (s.stats.forestExplored || 0) + 1;
+      const pool = DATA.FOREST_EVENTS.filter((id) => !s.flags['fe_' + id]);
+      if (!pool.length) return 'forest_explore_empty';
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      s.flags['fe_' + id] = true;
+      return id;
+    },
+    text: '你拨开岔路口的雾蔓，探进路旁的林子。',
+    choices: [],
+  },
+
+  forest_explore_empty: {
+    text: '林间空地都寻遍了——苔藓合拢，鸟声止息，雾在树干之间慢慢织回原样。',
+    choices: [
+      { text: '⚔️ 顺势清剿林中游荡的东西', sub: '遭遇战', combat: 'random:wild', win: 'crossroads' },
+      { text: '↩️ 回到岔路口', go: 'crossroads' },
+    ],
+  },
+
+  /* —— 异闻 · 猎人的陷阱线 —— */
+  fe_trapline: {
+    text: '林间兽径上悬着数道细如发丝的绊索，反着微光。绊索尽头的树皮下刻着一道箭头——猎人标记收获的规矩。\n\n陷阱大多空着，最远的那只却坠得沉甸甸。',
+    choices: [
+      {
+        text: '🌀 循着猎人的标记收陷阱', sub: '🎲 敏捷检定 · DC 10',
+        check: { stat: 'agi', dc: 10 },
+        success: { text: '你按着标记的指引逐一拆解，避开了回弹的木弓。最深那只陷阱里挂着一只肥硕的雪兔，旁边还搁着一瓶猎人备着的药。', fx: { gold: 30, item: 'potion' }, go: 'crossroads' },
+        fail: { text: '一根绊索绷断了，木弓弹在你的手背上。收获只有一小捆兔毛。', fx: { hp: -5, gold: 10 }, go: 'crossroads' },
+      },
+      { text: '🪢 只收几段好绊索', sub: '细铁丝总有用处 · 少量经验', fx: { xp: 8 }, go: 'crossroads' },
+    ],
+  },
+
+  /* —— 异闻 · 星蜂的空树 —— */
+  fe_hivetree: {
+    text: '一棵雷劈过的老松树心空了，洞口糊着蜂蜡，甜味顺着树缝往外淌。\n\n蜂群进进出出——它们的腹部泛着极淡的星光，是这片林子喂出来的品种。',
+    choices: [
+      {
+        text: '💪 撬开树洞取蜜', sub: '🎲 力量检定 · DC 11',
+        check: { stat: 'pow', dc: 11 },
+        success: { text: '你用撬棍撑住裂口，整脾蜜蜡完璧取出。蜂蜜在瓶里泛着星点，甜得喉咙发暖。', fx: { healPct: 40, gold: 15 }, go: 'crossroads' },
+        fail: { text: '裂口崩塌，蜂群轰然而出——你抱头鼠窜，脖子上还是挨了几针。', fx: { hp: -8 }, go: 'crossroads' },
+      },
+      { text: '🍯 只刮一点溢出的蜜', sub: '浅尝辄止', fx: { healPct: 15 }, go: 'crossroads' },
+    ],
+  },
+
+  /* —— 异闻 · 猎人的歇脚棚 —— */
+  fe_hut: {
+    text: '几根坑木搭成的窝棚半埋在蕨丛里，火塘的灰还是温的。墙上挂着一张兽皮，上面用炭笔画满了计时用的划痕。\n\n棚主人离开不久——也许会回来。',
+    choices: [
+      {
+        text: '💬 留下来，等猎人回棚', sub: '🎲 魅力检定 · DC 11',
+        check: { stat: 'cha', dc: 11 },
+        success: { text: '猎人踏着暮色回来，端详你半晌，教了你一套野外自救的手法："记着，先喘气，再止血，最后才想别的。"', fx: { card: 'second_wind', xp: 10 }, go: 'crossroads' },
+        fail: { text: '等到天黑也没人回来。你翻火塘取暖时，扒出了猎人埋着的几枚火钱。', fx: { gold: 12 }, go: 'crossroads' },
+      },
+      { text: '🔥 借火塘烘一烘湿衣', sub: '暖意入骨', fx: { healPct: 20 }, go: 'crossroads' },
+    ],
+  },
+
+  /* —— 异闻 · 蛾群夜舞 —— */
+  fe_moths: {
+    text: '暮色里，一大群星蛾在空地上空盘旋——翼粉簌簌落下，在光线里像一场缓慢的银色细雪。\n\n它们落过的地方，草叶都轻轻发亮。',
+    choices: [
+      {
+        text: '🧪 张开斗篷，收集鳞粉', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '你贴着风向张开斗篷，兜住一整片滑落的翼粉——凝在瓶底，成了精神抖擞的一小瓶。', fx: { item: 'energy_potion' }, go: 'crossroads' },
+        fail: { text: '翼粉呛进喉咙，蛾群骤然收拢——在它们眼里，你成了必须清剿的入侵者！', combat: 'moth_swarm', win: 'crossroads' },
+      },
+      { text: '👁️ 静静看完这场舞', sub: '看得入神 · 少量经验', fx: { xp: 12 }, go: 'crossroads' },
+    ],
+  },
+
+  /* —— 异闻 · 苔石路标 —— */
+  fe_stone: {
+    text: '一块半人高的石头立在兽径分岔处，苔衣下面隐约刻着箭头与几行小字。\n\n字迹被雨水泡得模糊，但刻痕很深——刻它的人指望它撑过很多年。',
+    choices: [
+      {
+        text: '📖 剥开苔衣，辨认刻字', sub: '🎲 智力检定 · DC 10',
+        check: { stat: 'int', dc: 10 },
+        success: { text: '苔衣掀开，刻字露了出来——那是初代守塔人留下的指路铭，末尾一句写着："雾散之处，皆是归途。"你把这句诗记进了笔记。', fx: { xp: 15, note: 'forest_marks' }, go: 'crossroads' },
+        fail: { text: '苔衣下的刻痕被岁月啃得只剩凹坑。你只认出箭头——指向镇子，和塔。', fx: { xp: 5 }, go: 'crossroads' },
+      },
+      {
+        text: '🪓 撬开路基石看看底下', sub: '🎲 力量检定 · DC 12',
+        check: { stat: 'pow', dc: 12 },
+        success: { text: '石下有个涂蜡的小布包——猎人或旅人留的应急粮：几枚铜钱和一小瓶药。', fx: { gold: 25, item: 'potion' }, go: 'crossroads' },
+        fail: { text: '撬棍打滑，石头砸回原位，压了你的脚。你一瘸一拐地退开。', fx: { hp: -6 }, go: 'crossroads' },
+      },
+    ],
+  },
+
+  /* —— 异闻 · 巨狼的残骸 —— */
+  fe_wolfbones: {
+    text: '灌木丛里散着一副巨狼的白骨——死去有些年头了，肋骨间卡着一支断箭。\n\n奇怪的是，骨堆周围一圈的雾格外稀薄，草木长得也格外旺。',
+    choices: [
+      {
+        text: '🦴 搜寻狼骨间的遗物', sub: '🎲 敏捷检定 · DC 11',
+        check: { stat: 'agi', dc: 11 },
+        success: { text: '你在肋骨间摸出一只未腐的行囊——里面的火油密封完好，铜钱生了绿锈但仍是钱。', fx: { gold: 28, item: 'firebomb' }, go: 'crossroads' },
+        fail: { text: '碎骨应手而碎，划破了你的手掌。收获只有一撮狼毛。', fx: { hp: -5, gold: 8 }, go: 'crossroads' },
+      },
+      { text: '🕯️ 拔掉断箭，致意而行', sub: '让雾里的猎手安息', fx: { healPct: 15, xp: 8 }, go: 'crossroads' },
     ],
   },
 
@@ -1678,6 +1797,7 @@ DATA.NOTES = {
   wall_whisper:  { id: 'wall_whisper', title: '👂 墙中的低语', text: '贴着第七巷的墙，低语一遍遍念着六个名字。数到第七个时——它停了一下，像是在等你补上。' },
   sixth_fate:    { id: 'sixth_fate', title: '📜 第六人的去向', text: '第七巷深处的裂缝旁，第六人的行囊叠得整整齐齐。前五个人被墙吃了；第六人放下了剑，自己走了进去。托马斯说"别信它说的话"——可有人信了。' },
   chime_lore:    { id: 'chime_lore', title: '🎐 风铃的来历', text: '聋伯说：雾隐镇建镇那年，初代守塔人亲手调了满镇的风铃——"铃声不断，雾就不进镇。"铃，是锁的一部分。可如今，铃一只接一只地哑了。' },
+  forest_marks:  { id: 'forest_marks', title: '🪨 兽径的石铭', text: '岔路口的苔石路标是初代守塔人所刻，为旅人指路。铭文末尾写着："雾散之处，皆是归途。"——塔门上那行诗，原来一百多年前就刻在这里了。' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */

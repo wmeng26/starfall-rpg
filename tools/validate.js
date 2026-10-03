@@ -216,6 +216,10 @@ for (const id of (DATA.MINE_EVENTS || [])) {
 }
 /* 调度场景：异闻调度须存在且能从未触发事件中路由 */
 if (DATA.MINE_EVENTS && DATA.MINE_EVENTS.length && !SCENES.mine_explore) err('缺少矿坑异闻调度场景 mine_explore');
+for (const id of (DATA.FOREST_EVENTS || [])) {
+  if (!SCENES[id]) err('FOREST_EVENTS 未知异闻场景: ' + id);
+}
+if (DATA.FOREST_EVENTS && DATA.FOREST_EVENTS.length && !SCENES.forest_explore) err('缺少林间异闻调度场景 forest_explore');
 /* 升级祝福：结构完整、效果字段合法、id 唯一 */
 {
   const BLESS_FX = ['maxHp', 'gold', 'hp', 'healPct', 'hpPct', 'item', 'card', 'gear', 'flag', 'flag2', 'stat', 'xp'];
@@ -350,6 +354,19 @@ if (routed.size !== DATA.MINE_EVENTS.length) err('异闻调度未覆盖全部事
 if (DATA.SCENES.mine_explore.onEnter(stme) !== 'mine_explore_empty') err('六则异闻触发后应落入 mine_explore_empty');
 if (stme.stats.explored !== DATA.MINE_EVENTS.length + 1) err('探索计数错误: ' + stme.stats.explored);
 console.log('  ✓ 矿坑异闻 调度路由 · 每则一次 · 探索计数 通过');
+
+/* 林间异闻：调度路由 / 每则一次 / 探索计数 / 探空回落 */
+const stfe = sandbox.newGameState('warrior');
+const routedF = new Set();
+for (let i = 0; i < DATA.FOREST_EVENTS.length; i++) {
+  const dest = DATA.SCENES.forest_explore.onEnter(stfe);
+  if (!DATA.FOREST_EVENTS.includes(dest)) err('林间异闻调度路由到未知场景: ' + dest);
+  routedF.add(dest);
+}
+if (routedF.size !== DATA.FOREST_EVENTS.length) err('林间异闻调度未覆盖全部事件: ' + JSON.stringify(Array.from(routedF)));
+if (DATA.SCENES.forest_explore.onEnter(stfe) !== 'forest_explore_empty') err('六则异闻触发后应落入 forest_explore_empty');
+if (stfe.stats.forestExplored !== DATA.FOREST_EVENTS.length + 1) err('林间探索计数错误: ' + stfe.stats.forestExplored);
+console.log('  ✓ 林间异闻 调度路由 · 每则一次 · 探索计数 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
