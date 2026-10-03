@@ -41,11 +41,26 @@ window.pickFirstReward = async function () {
   for (let i = 0; i < 40; i++) {
     if (document.querySelector('.reward-card')) {
       document.querySelector('.reward-card').click();
+      for (let j = 0; j < 20; j++) {
+        if (!(G.state && G.state.scene === 'blessing')) break;
+        const btns = document.querySelectorAll('#choices .choice-btn');
+        if (btns.length) btns[btns.length - 1].click();
+        await new Promise(r => setTimeout(r, 150));
+      }
       return true;
     }
     await new Promise(r => setTimeout(r, 250));
   }
   return false;
+};
+window.dismissBlessings = async function () {
+  for (let i = 0; i < 40; i++) {
+    if (!(G.state && G.state.scene === 'blessing')) return G.state ? G.state.scene : null;
+    const btns = document.querySelectorAll('#choices .choice-btn');
+    if (btns.length) btns[btns.length - 1].click();
+    await new Promise(r => setTimeout(r, 150));
+  }
+  return G.state ? G.state.scene : null;
 };
 '''
 
@@ -61,12 +76,14 @@ def goto_scene(page, sid):
     page.wait_for_timeout(120)
     page.evaluate('document.querySelector("#scene-text").onclick && document.querySelector("#scene-text").onclick()')
     page.wait_for_timeout(60)
+    page.evaluate('dismissBlessings()')
 
 def click_choice(page, text):
     page.locator('#choices .choice-btn', has_text=text).first.click()
     page.wait_for_timeout(200)
     page.evaluate('document.querySelector("#scene-text").onclick && document.querySelector("#scene-text").onclick()')
     page.wait_for_timeout(100)
+    page.evaluate('dismissBlessings()')
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='msedge')

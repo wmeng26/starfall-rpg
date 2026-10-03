@@ -1585,6 +1585,49 @@ DATA.SCENES = {
     ],
   },
 
+  /* ============ 系统场景 · 升级祝福 ============
+     文本先于 onEnter 求值：text 读到的是"消费前"的待择数，
+     onEnter 消耗一道并掷出三选一；pendingBless 为 0 时直接路由回 blessReturn。 */
+  blessing: {
+    text: (s) => {
+      const n = (s.flags && s.flags.pendingBless) || 0;
+      let t = '熟悉的暖流自血脉深处涌起——又一次升华。骨头在焕新，旧伤在褪去，回响在你耳畔报出三道祝福的名讳。\n\n择其一，收进往后的旅程。（升级：生命上限 +8，并恢复了部分生命。）';
+      if (n > 1) t += '\n\n低语告诉你：这样的祝福，你还攒着 ' + n + ' 道。';
+      return t;
+    },
+    onEnter: (s) => {
+      const n = s.flags.pendingBless || 0;
+      if (n <= 0) {
+        const ret = s.flags.blessReturn || 'town';
+        delete s.flags.blessReturn;
+        return ret;
+      }
+      s.flags.pendingBless = n > 1 ? n - 1 : 0;
+      const pool = DATA.BLESSINGS.filter((b) => !(b.id === 'bless_energy' && s.flags.energyBonus));
+      const picks = [];
+      for (let i = 0; i < 3 && pool.length; i++) {
+        picks.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0].id);
+      }
+      s.flags.blessPicks = picks;
+      return null;
+    },
+    choices: [
+      { text: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[0]); return b ? b.icon + ' ' + b.name : ''; },
+        subFn: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[0]); return b ? b.desc : null; },
+        special: 'bless_pick', pickIndex: 0,
+        show: (s) => !!(s.flags.blessPicks || [])[0] },
+      { text: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[1]); return b ? b.icon + ' ' + b.name : ''; },
+        subFn: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[1]); return b ? b.desc : null; },
+        special: 'bless_pick', pickIndex: 1,
+        show: (s) => !!(s.flags.blessPicks || [])[1] },
+      { text: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[2]); return b ? b.icon + ' ' + b.name : ''; },
+        subFn: (s) => { const b = DATA.BLESSINGS.find((x) => x.id === (s.flags.blessPicks || [])[2]); return b ? b.desc : null; },
+        special: 'bless_pick', pickIndex: 2,
+        show: (s) => !!(s.flags.blessPicks || [])[2] },
+      { text: '🚶 都不要，继续前行', sub: '祝福的余韵仍会留在身体里', special: 'bless_pick', pickIndex: -1 },
+    ],
+  },
+
   /* ============ 结局 ============ */
   ending_light: {
     text: (s) => '净化后的星核归位，光柱自塔顶直贯天穹。\n\n缠绵百年的雾，在晨光中一寸寸消散。风铃声响彻雾隐镇的每一条街巷——那是人们第一次听清风铃真正的声音。\n\n' + (s.flags.minerSaved ? '托马斯带着矿工们重建了矿坑，你的名字被刻在新的矿监日志第一页。\n\n' : '') + (s.flags.wispDeal ? '你按了按太阳穴——那缕盘旋不去的低语，终于在光里安静了下来，像一声叹息。\n\n' : '') + '守塔人莫尔甘的墓碑立在塔下，碑文是他自己刻的最后一行诗：\n"雾散之处，皆是归途。"\n\n—— 完 ——【结局 · 星光】\n\n✦ 第 ' + Cycle.count() + ' 段旅程已记入星图' + (Cycle.count() > 1 ? '。' : '——标题画面已解锁「继承开局」。'),
@@ -1640,6 +1683,23 @@ DATA.NOTES = {
 /* 高阶卡牌（旅人出售，按职业） */
 DATA.CLASS_CARDS = { warrior: 'battle_rage', mage: 'flamestorm', ranger: 'piercing_arrow' };
 
+/* ============================ 升级祝福 ============================
+   每次升级（gainXp）攒下一道待择祝福；下一次场景跳转被 Story 拦截到
+   blessing 场景，从池中随机三择一（special 'bless_pick'）。
+   fx 在择取时经 applyEffects 结算；bless_card 择取时随机发放普通/稀有卡。
+   涌泉（行动力上限）每局仅可择一次，已择则不再进入候选。 */
+DATA.BLESSINGS = [
+  { id: 'bless_vigor',  icon: '🛡️', name: '坚韧', desc: '生命上限 +12（并等量恢复）', fx: { maxHp: 12 } },
+  { id: 'bless_pow',    icon: '💪', name: '蛮力', desc: '力量 +1', fx: { stat: { pow: 1 } } },
+  { id: 'bless_agi',    icon: '🌀', name: '灵巧', desc: '敏捷 +1', fx: { stat: { agi: 1 } } },
+  { id: 'bless_int',    icon: '📖', name: '慧识', desc: '智力 +1', fx: { stat: { int: 1 } } },
+  { id: 'bless_cha',    icon: '💬', name: '风仪', desc: '魅力 +1', fx: { stat: { cha: 1 } } },
+  { id: 'bless_energy', icon: '⚡', name: '涌泉', desc: '每场战斗的行动力上限 +1（每局一次）' },
+  { id: 'bless_heal',   icon: '💚', name: '安眠', desc: '完全恢复生命', fx: { healPct: 100 } },
+  { id: 'bless_gold',   icon: '💰', name: '横财', desc: '获得 80 金币', fx: { gold: 80 } },
+  { id: 'bless_card',   icon: '🂠', name: '顿悟', desc: '获得一张随机卡牌（普通/稀有）' },
+];
+
 /* ============================ 成就 ============================
    跨周目持久保存；test(state) 返回 true 即解锁。
    结局成就依赖 scene（结局场景自身），支线成就依赖 flags。
@@ -1668,6 +1728,7 @@ DATA.ACHIEVEMENTS = {
   codex_enemies_15: { id: 'codex_enemies_15', icon: '🌄', name: '雾中百景·贰', desc: '冒险图鉴累计收录 15 种敌人。', test: () => Codex.count('enemies') >= 15 },
   explore_5:     { id: 'explore_5', icon: '🔎', name: '异闻采集者', desc: '在矿坑搜寻侧巷，触发 5 则矿坑异闻。', test: (s) => (s.stats.explored || 0) >= 5 },
   relic_8:       { id: 'relic_8', icon: '🏺', name: '星尘满囊', desc: '同时持有 8 件星尘遗物。', test: (s) => Array.isArray(s.relics) && s.relics.length >= 8 },
+  bless_3:       { id: 'bless_3', icon: '🌟', name: '受祝之人', desc: '累计择取 3 道升级祝福。', test: (s) => (s.stats.blessings || 0) >= 3 },
   cycle_2:       { id: 'cycle_2', icon: '🔄', name: '轮回之始', desc: '完成第 2 周目。', test: () => Cycle.count() >= 2 },
   cycle_3:       { id: 'cycle_3', icon: '♾️', name: '雾中轮回', desc: '完成第 3 周目。', test: () => Cycle.count() >= 3 },
   diff_hard:     { id: 'diff_hard', icon: '🌫️', name: '试炼成王', desc: '以迷雾试炼（困难）难度通关任一结局。', test: (s) => s.diff === 1 && String(s.scene).indexOf('ending') === 0 },

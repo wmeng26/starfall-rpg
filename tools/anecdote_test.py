@@ -35,12 +35,26 @@ def goto_scene(page, sid):
     page.wait_for_timeout(300)
     page.evaluate('document.querySelector("#scene-text").onclick && document.querySelector("#scene-text").onclick()')
     page.wait_for_timeout(100)
+    page.evaluate('dismissBlessings()')
 
 def click_choice(page, text):
     page.locator('#choices .choice-btn', has_text=text).first.click()
     page.wait_for_timeout(400)
     page.evaluate('document.querySelector("#scene-text").onclick && document.querySelector("#scene-text").onclick()')
     page.wait_for_timeout(100)
+    page.evaluate('dismissBlessings()')
+
+DISMISS_JS = '''
+window.dismissBlessings = async function () {
+  for (let i = 0; i < 40; i++) {
+    if (!(G.state && G.state.scene === 'blessing')) return G.state ? G.state.scene : null;
+    const btns = document.querySelectorAll('#choices .choice-btn');
+    if (btns.length) btns[btns.length - 1].click();
+    await new Promise(r => setTimeout(r, 150));
+  }
+  return G.state ? G.state.scene : null;
+};
+'''
 
 def force_random(page, val):
     """固定 Math.random 用于检定：0.99 → 骰 20 必成功；0 → 骰 1 必失败"""
@@ -60,6 +74,7 @@ with sync_playwright() as p:
     page.evaluate('localStorage.clear()')
     page.reload()
     page.wait_for_timeout(600)
+    page.evaluate(DISMISS_JS)
 
     # ---- 新游戏（战士）→ 教学战斗 → 抵达城镇 ----
     page.click('#t-new')
@@ -264,7 +279,7 @@ with sync_playwright() as p:
       Achieve.check(G.state);
     ''')
     check(ev(page, 'Achieve.has("codex_enemies_15")'), '成就「雾中百景·贰」解锁（收录 15 种敌人）')
-    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 35, '成就总数 35')
+    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 36, '成就总数 36')
     check(ev(page, 'DATA.ACHIEVEMENTS.codex_relics.desc.indexOf("17") >= 0'), '「星尘全图」描述随遗物总数动态更新')
 
     browser.close()

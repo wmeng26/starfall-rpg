@@ -59,11 +59,13 @@ const Combat = {
     }
 
     const R = relicSum(G.state);
+    /* 祝福·涌泉：本局每次升级祝福择取的行动力上限加成（每局一次） */
+    const eb = (G.state.flags && G.state.flags.energyBonus) ? 1 : 0;
     this.C = {
       enemies,
       player: { block: 0, statuses: {} },
       hand: [], draw: shuffle(G.state.deck.slice()), discard: [],
-      energy: 3 + (R.maxEnergy || 0), maxEnergy: 3 + (R.maxEnergy || 0), turn: 0,
+      energy: 3 + (R.maxEnergy || 0) + eb, maxEnergy: 3 + (R.maxEnergy || 0) + eb, turn: 0,
       busy: true, over: false,
       selected: -1, targetingItem: null,
       relic: R,

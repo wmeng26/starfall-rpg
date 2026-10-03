@@ -397,10 +397,16 @@ function checkMod(state, stat) {
   return v;
 }
 
-/* —— 效果结算。fx: {gold, hp, healPct, item, useItem, card, gear, flag, flag2:{k:v}, stat:{k:v}, xp} —— */
+/* —— 效果结算。fx: {gold, hp, healPct, hpPct, maxHp, item, useItem, card, gear, flag, flag2:{k:v}, stat:{k:v}, xp} —— */
 function applyEffects(state, fx) {
   if (!fx) return;
   const p = state.player;
+  if (fx.maxHp) {
+    /* 生命上限提升（祝福·坚韧）：当前生命一并等量提升 */
+    p.maxHp += fx.maxHp;
+    p.hp = Math.min(p.maxHp, p.hp + fx.maxHp);
+    UI.log('❤️ 生命上限 +' + fx.maxHp, 'gain');
+  }
   if (fx.gold) {
     p.gold = Math.max(0, p.gold + fx.gold);
     UI.log((fx.gold > 0 ? '💰 获得 ' : '💰 支出 ') + Math.abs(fx.gold) + ' 金币', 'gain');
@@ -492,8 +498,10 @@ function gainXp(state, n) {
     p.level += 1;
     p.maxHp += 8;
     p.hp = Math.min(p.maxHp, p.hp + 15);
-    UI.toast('🎉 升级！Lv.' + p.level + '（生命上限 +8）', 'good');
-    UI.log('🎉 升级！Lv.' + p.level, 'sys');
+    /* 升级祝福：在下一个场景跳转前结算（Story.goto 拦截到 blessing 场景） */
+    state.flags.pendingBless = (state.flags.pendingBless || 0) + 1;
+    UI.toast('🎉 升级！Lv.' + p.level + '（生命上限 +8 · 可择祝福）', 'good');
+    UI.log('🎉 升级！Lv.' + p.level + ' —— 一道祝福待你择取', 'sys');
     Sfx.play('levelup');
   }
 }

@@ -23,13 +23,27 @@ def screenshot(page, name):
     page.screenshot(path=os.path.join(SHOT, name))
 
 def scene_text(page):
+    dismiss(page)
     page.click('#scene-text')  # 跳过打字机
     page.wait_for_timeout(200)
     return page.locator('#scene-text').inner_text()
 
+def dismiss(page):
+    """升级祝福拦截是全局的：停在祝福场景就自动放弃，继续既有流程"""
+    page.evaluate('''(async () => {
+      for (let i = 0; i < 40; i++) {
+        if (!(G.state && G.state.scene === 'blessing')) break;
+        const b = document.querySelectorAll('#choices .choice-btn');
+        if (b.length) b[b.length - 1].click();
+        await new Promise(r => setTimeout(r, 150));
+      }
+    })()''')
+    page.wait_for_timeout(100)
+
 def pick(page, text):
     page.locator('#choices .choice-btn', has_text=text).click()
     page.wait_for_timeout(300)
+    dismiss(page)
 
 def win_fight(page):
     """直接击杀场上敌人并结算胜利奖励，随后跳过卡牌奖励"""
@@ -37,6 +51,7 @@ def win_fight(page):
     page.wait_for_timeout(1200)
     page.click('#btn-skip-reward')
     page.wait_for_timeout(500)
+    dismiss(page)
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, channel='msedge')

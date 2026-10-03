@@ -23,7 +23,20 @@ def check(cond, msg):
 def screenshot(page, name):
     page.screenshot(path=os.path.join(SHOT, name))
 
+def dismiss(page):
+    """升级祝福拦截是全局的：停在祝福场景就自动放弃，继续既有流程"""
+    page.evaluate('''(async () => {
+      for (let i = 0; i < 40; i++) {
+        if (!(G.state && G.state.scene === 'blessing')) break;
+        const b = document.querySelectorAll('#choices .choice-btn');
+        if (b.length) b[b.length - 1].click();
+        await new Promise(r => setTimeout(r, 150));
+      }
+    })()''')
+    page.wait_for_timeout(100)
+
 def scene_text(page):
+    dismiss(page)
     page.click('#scene-text')  # 跳过打字机
     page.wait_for_timeout(200)
     return page.locator('#scene-text').inner_text()
@@ -31,10 +44,12 @@ def scene_text(page):
 def pick(page, text):
     page.locator('#choices .choice-btn', has_text=text).click()
     page.wait_for_timeout(400)
+    dismiss(page)
 
 def pick_nth(page, text, n=0):
     page.locator('#choices .choice-btn', has_text=text).nth(n).click()
     page.wait_for_timeout(400)
+    dismiss(page)
 
 def choices(page):
     return page.locator('#choices .choice-btn').all_inner_texts()
@@ -59,6 +74,7 @@ def win_fight(page):
     page.wait_for_timeout(1200)
     page.click('#btn-skip-reward')
     page.wait_for_timeout(500)
+    dismiss(page)
 
 def xp_after(xp0, lvl0, gain):
     """镜像 gainXp：经验跨过升级线会被扣除，绝对值断言需按等级折算"""

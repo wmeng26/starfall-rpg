@@ -200,7 +200,7 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'upgrade_card', 'purify_curse', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'upgrade_card', 'purify_curse', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass', 'bless_pick'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
     if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
@@ -216,6 +216,19 @@ for (const id of (DATA.MINE_EVENTS || [])) {
 }
 /* 调度场景：异闻调度须存在且能从未触发事件中路由 */
 if (DATA.MINE_EVENTS && DATA.MINE_EVENTS.length && !SCENES.mine_explore) err('缺少矿坑异闻调度场景 mine_explore');
+/* 升级祝福：结构完整、效果字段合法、id 唯一 */
+{
+  const BLESS_FX = ['maxHp', 'gold', 'hp', 'healPct', 'hpPct', 'item', 'card', 'gear', 'flag', 'flag2', 'stat', 'xp'];
+  const blessIds = new Set();
+  for (const b of (DATA.BLESSINGS || [])) {
+    if (!b.id || !b.name || !b.icon || !b.desc) { err('祝福缺字段: ' + (b.id || JSON.stringify(b)).slice(0, 30)); continue; }
+    if (blessIds.has(b.id)) err('祝福 id 重复: ' + b.id);
+    blessIds.add(b.id);
+    const isCard = b.id === 'bless_card', isEnergy = b.id === 'bless_energy';
+    if (!isCard && !isEnergy && !b.fx) err('祝福 ' + b.id + ' 缺少 fx');
+    if (b.fx) for (const k in b.fx) if (!BLESS_FX.includes(k)) err('祝福 ' + b.id + ' 未知 fx 字段: ' + k);
+  }
+}
 
 /* ---------- 3. 逻辑冒烟测试 ---------- */
 console.log('== 逻辑冒烟测试 ==');

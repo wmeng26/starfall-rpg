@@ -12,6 +12,14 @@ const Story = {
     const scene = DATA.SCENES[id];
     if (!scene) { console.error('场景不存在: ' + id); return; }
 
+    /* 升级祝福：升级攒下的待择祝福在下一个场景之前结算。
+       结局不拦截（清档在即，祝福无处安放），blessing 自身不拦截。 */
+    if (G.state && id !== 'blessing' && id.indexOf('ending_') !== 0 && depth < 7 &&
+        (G.state.flags.pendingBless || 0) > 0) {
+      G.state.flags.blessReturn = id;
+      return this.goto('blessing', depth + 1);
+    }
+
     /* 通关结算：进入结局场景时记录周目（须在求值结局文本之前，
        文本里的"周目 N 已记入星图"才能读到最新数字） */
     if (G.state && id.indexOf('ending_') === 0 && !G.state.flags.cycleCounted) {
@@ -46,6 +54,8 @@ const Story = {
     }
 
     const full = extra ? (extra + '\n\n' + text) : text;
+    /* 清掉上一场景的残留选项：打字机期间旧按钮仍可点击，会误触发前一场景的行动 */
+    $('#choices').innerHTML = '';
     UI.typewriter($('#scene-text'), full, () => this.renderChoices(scene));
   },
 
@@ -121,6 +131,26 @@ const Story = {
     }
     if (ch.special === 'endless_fight') {
       Combat.start(endlessGroupKey((s.flags.endlessDepth || 0) + 1), 'endless_clear');
+      return;
+    }
+    /* 升级祝福择取：pickIndex -1 表示都不选；择毕回到被拦截前的目的地 */
+    if (ch.special === 'bless_pick') {
+      const picks = Array.isArray(s.flags.blessPicks) ? s.flags.blessPicks : [];
+      const b = DATA.BLESSINGS.find((x) => x.id === picks[ch.pickIndex]);
+      delete s.flags.blessPicks;
+      if (b) {
+        s.stats.blessings = (s.stats.blessings || 0) + 1;
+        if (b.id === 'bless_card') applyEffects(s, { card: endlessRandomCardId() });
+        else if (b.id === 'bless_energy') applyEffects(s, { flag: 'energyBonus' });
+        else if (b.fx) applyEffects(s, b.fx);
+        UI.log('🌟 祝福【' + b.name + '】：' + b.desc, 'gain');
+      }
+      UI.renderChar();
+      UI.renderHud();
+      Save.write(s);
+      const ret = s.flags.blessReturn || 'town';
+      delete s.flags.blessReturn;
+      this.goto(ret);
       return;
     }
     if (ch.special === 'endless_door') {
