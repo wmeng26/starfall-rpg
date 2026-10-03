@@ -41,8 +41,8 @@ with sync_playwright() as p:
     page.wait_for_timeout(600)
 
     total = page.evaluate('Codex.total()')
-    check(total == page.evaluate('Object.keys(DATA.CARDS).length + Object.keys(DATA.RELICS).length + Object.keys(DATA.ENEMIES).length'),
-          '图鉴总数 = 卡牌+遗物+敌人（%d）' % total)
+    check(total == page.evaluate('Object.keys(DATA.CARDS).filter(id => !DATA.CARDS[id].up).length + Object.keys(DATA.RELICS).length + Object.keys(DATA.ENEMIES).length'),
+          '图鉴总数 = 卡牌（不含淬炼变体）+遗物+敌人（%d）' % total)
     check(page.evaluate('Codex.count()') == 0, '初始收录为 0')
 
     # ---- 标题画面入口 ----

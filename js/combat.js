@@ -200,6 +200,9 @@ const Combat = {
     const card = DATA.CARDS[C.hand[idx]];
     if (!card) return;
 
+    /* 诅咒牌：无法打出，只能带着它战斗 */
+    if (card.unplayable) { UI.toast('这张牌无法打出', 'bad'); return; }
+
     if (card.cost > C.energy) { UI.toast('行动力不足', 'bad'); return; }
 
     /* 需要选择目标 */
@@ -396,6 +399,21 @@ const Combat = {
     C.targetingItem = null;
     Sfx.play('click');
 
+    /* 诅咒代价：回合结束时仍握在手中的 drain 牌索取代价 */
+    let drain = 0;
+    for (const cid of C.hand) {
+      const cd = DATA.CARDS[cid];
+      if (cd && cd.drain) drain += cd.drain;
+    }
+    if (drain > 0 && G.state.player.hp > 0) {
+      const loss = Math.min(drain, G.state.player.hp);
+      G.state.player.hp -= loss;
+      UI.float($('#p-avatar'), '-' + loss, 'dmg');
+      UI.log('☠️ 手中的诅咒低语不休：你失去 ' + loss + ' 点生命', 'battle');
+      this.renderAll();
+      await sleep(420);
+    }
+
     /* 手牌弃置，玩家虚弱/易伤递减 */
     C.discard.push(...C.hand.splice(0));
     const st = C.player.statuses;
@@ -528,6 +546,12 @@ const Combat = {
     Sfx.play('win');
     UI.log('🎉 战斗胜利！', 'gain');
 
+    /* 带着诅咒牌打赢头目战：雾也认得出这样的人 */
+    if (C.enemies.some((e) => e.boss) && G.state.deck.some((id) => DATA.CARDS[id] && DATA.CARDS[id].curse)) {
+      G.state.flags.curseBossWin = true;
+      UI.log('☠️ 你带着诅咒击败了头目', 'sys');
+    }
+
     /* 奖励结算 */
     let gold = 0, xp = 0;
     for (const e of C.enemies) {
@@ -564,9 +588,11 @@ const Combat = {
       G.state.items[potionDrop] = (G.state.items[potionDrop] || 0) + 1;
     }
 
-    /* 三选一卡牌（迷雾回廊第 5 层起，头目卡也会出现在奖励中——回响的力量向够深的人敞开） */
+    /* 三选一卡牌（迷雾回廊第 5 层起，头目卡也会出现在奖励中——回响的力量向够深的人敞开；
+       淬炼变体与诅咒不进奖励池） */
     const floor = (G.state.flags && G.state.flags.endless) ? (G.state.flags.endlessDepth || 0) + 1 : 0;
     const pool = Object.values(DATA.CARDS).filter((c) =>
+      !c.up &&
       (c.rarity === 'common' || c.rarity === 'rare' || (c.rarity === 'boss' && floor >= 5)) &&
       (!c.cls || c.cls === G.state.player.cls));
     const picks = [];

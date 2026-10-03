@@ -21,7 +21,9 @@ const check = (cond, msg) => {
   if (!cond) failed++;
 };
 
-/* ---------- 无 DOM 沙盒 ---------- */
+/* ---------- 无 DOM 沙盒 ----------
+   把游戏源码装配成 CommonJS 模块文件后静态 require（代替 new Function 动态编译）。
+   生成文件固定写入本目录（.gen-*.js，已被 .gitignore 忽略），进程退出时清理。 */
 const fakeEl = () => ({
   innerHTML: '', textContent: '', style: {}, dataset: {}, hidden: false,
   classList: { add() {}, remove() {} },
@@ -32,21 +34,28 @@ const fakeEl = () => ({
   getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
 });
 const store = {};
-const sb = new Function('document', 'window', 'localStorage', 'Main',
-  ALL_JS + '\n;return { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded, hasRelic, relicSum };'
-)(
-  {
+const GEN_SANDBOX = path.join(__dirname, '.gen-save-sandbox.js');
+fs.writeFileSync(GEN_SANDBOX,
+  "'use strict';\n" +
+  'module.exports = function (deps) {\n' +
+  '  const document = deps.document, window = deps.window, localStorage = deps.localStorage, Main = deps.Main;\n' +
+  ALL_JS +
+  '\n;return { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded, hasRelic, relicSum };\n};'
+);
+process.on('exit', () => { try { fs.unlinkSync(GEN_SANDBOX); } catch (e) {} });
+const sb = require('./.gen-save-sandbox.js')({
+  document: {
     querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
     getElementById: () => fakeEl(), addEventListener() {}, body: fakeEl(),
   },
-  { addEventListener() {}, AudioContext: null },
-  {
+  window: { addEventListener() {}, AudioContext: null },
+  localStorage: {
     getItem: (k) => (k in store ? store[k] : null),
     setItem: (k, v) => { store[k] = String(v); },
     removeItem: (k) => { delete store[k]; },
   },
-  { showDeath() {}, showTitle() {} }
-);
+  Main: { showDeath() {}, showTitle() {} },
+});
 const { G, Combat, UI, Save, Achieve, newGameState, DATA, gearBonus, checkMod, applyEffects, useItemOutside, xpNeeded, hasRelic, relicSum } = sb;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -749,10 +758,125 @@ async function main() {
     delete store['starfall_rpg_achv_v1'];
   }
 
+  /* 47. 淬炼变体：数据完整 + 变体卡可在战斗引擎中正常打出 */
+  {
+    let variants = 0;
+    for (const id in DATA.CARDS) {
+      const c = DATA.CARDS[id];
+      if (!c.up) continue;
+      variants++;
+      if (!DATA.CARDS[c.base]) { check(false, '变体 ' + id + ' 缺少基础卡'); break; }
+    }
+    check(variants >= 18, '淬炼变体卡定义齐全（' + variants + ' 张）');
+    check(DATA.CARDS.strike_up.up === true && !DATA.CARDS.strike_up.curse, '变体标记正确');
+
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.enemies[0].intent = { name: '发呆' };
+    C.hand = ['strike_up']; C.energy = 3;
+    const hp0 = C.enemies[0].hp;
+    await Combat.playCard(0, C.enemies[0].uid);
+    check(C.enemies[0].hp === hp0 - 10, '打击+ 打出 9+1（武器）= 10 点伤害');
+    Combat.C = null;
+  }
+
+  /* 48. 诅咒牌：无法打出 */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.hand = ['whisper_brand']; C.energy = 3; C.discard = [];
+    await Combat.onCardClick(0);
+    check(C.hand.length === 1 && C.hand[0] === 'whisper_brand', '诅咒牌点击后仍在手中');
+    check(C.energy === 3 && C.discard.length === 0, '诅咒牌未消耗行动力、未进弃牌堆');
+    Combat.C = null;
+  }
+
+  /* 49. 诅咒代价：回合结束时仍在手中的 drain 牌索要生命（多层叠加） */
+  {
+    G.state = newGameState('warrior');
+    Combat.start('goblin_scout', 'town');
+    const C = Combat.C;
+    C.enemies[0].intent = { name: '发呆' };
+    const hp0 = G.state.player.hp;
+    C.hand = ['star_itch', 'core_hunger'];
+    await Combat.endTurn();
+    check(G.state.player.hp === hp0 - 3, '星蚀之痒(1)+星核的饥馑(2)：回合末失去 3 点生命（实际 -' + (hp0 - G.state.player.hp) + '）');
+    check(C.discard.includes('star_itch') && C.discard.includes('core_hunger'), '诅咒牌回合末照常进入弃牌堆');
+    Combat.C = null;
+  }
+
+  /* 50. fx.curse：诅咒混入牌组；头目战持诅咒胜利落旗 */
+  {
+    const st = newGameState('warrior');
+    applyEffects(st, { curse: 'whisper_brand' });
+    check(st.deck.includes('whisper_brand'), 'fx.curse 将诅咒牌混入牌组');
+    check(!!DATA.CARDS.whisper_brand.curse, '诅咒牌带 curse 标记');
+
+    G.state = newGameState('warrior');
+    G.state.deck.push('whisper_brand');
+    Combat.start('boss_worm', 'town');
+    const C2 = Combat.C;
+    C2.enemies.forEach((e) => { e.hp = 0; });
+    await Combat.win();
+    check(G.state.flags.curseBossWin === true, '持诅咒打赢头目战 → curseBossWin 落旗');
+    check(Achieve.has('curse_boss'), '成就「负罪而行」解锁');
+    Combat.C = null;
+
+    G.state = newGameState('warrior');   /* 无诅咒的头目战不应落旗 */
+    Combat.start('boss_worm', 'town');
+    Combat.C.enemies.forEach((e) => { e.hp = 0; });
+    delete G.state.flags.curseBossWin;
+    await Combat.win();
+    check(!G.state.flags.curseBossWin, '无诅咒的头目战不落旗');
+    Combat.C = null;
+  }
+
+  /* 51. 存档自愈：变体与诅咒都是有效卡牌，不应被清理 */
+  {
+    const st = baseSave();
+    st.deck.push('strike_up', 'whisper_brand', 'GONE_X');
+    putSave(st);
+    const r = Save.read();
+    check(r.deck.includes('strike_up') && r.deck.includes('whisper_brand'), '淬炼变体与诅咒在自愈后保留');
+    check(!r.deck.includes('GONE_X'), '真正的失效卡牌仍被剔除');
+  }
+
+  /* 52. 无面神龛：血祭发放无变体的普通/稀有卡；裂隙失败分支给诅咒 */
+  {
+    const st = newGameState('warrior');
+    const blood = DATA.SCENES.shrine.choices.find((c) => c.once === 'shrine_blood');
+    const fx = blood.fxFn(st);
+    check(fx.hpPct === -10 && DATA.CARDS[fx.card] && !DATA.CARDS[fx.card].up && !DATA.CARDS[fx.card].curse,
+      '血祭：失去 10% 生命上限，换来一张无变体卡牌【' + (DATA.CARDS[fx.card] || {}).name + '】');
+    const crack = DATA.SCENES.ev_crack.choices[0].fxFn;
+    const realRandom = Math.random;
+    Math.random = () => 0.9;
+    const bad = crack(st);
+    Math.random = () => 0.1;
+    const good = crack(st);
+    Math.random = realRandom;
+    check(bad.curse === 'star_itch' && bad.hp === -3, '裂隙烫手分支：诅咒【星蚀之痒】+ 3 点生命');
+    check(good.healPct === 35, '裂隙甘泉分支：恢复 35% 生命');
+  }
+
+  /* 53. 淬炼 / 净化向成就 */
+  {
+    const st = newGameState('warrior');
+    st.stats.upgraded = 3;
+    st.stats.purified = 3;
+    Achieve.check(st);
+    check(Achieve.has('forge_3'), '成就「千锤百炼」解锁（淬炼 3 张）');
+    check(Achieve.has('curse_pure'), '成就「涤净烙印」解锁（洗净 3 张诅咒）');
+    Achieve._set = null;
+    delete store['starfall_rpg_achv_v1'];
+  }
+
   /* ---------- 汇总 ---------- */
   console.log('');
   if (failed) { console.error('✗ 存档/回归校验失败 ' + failed + ' 项'); process.exit(1); }
-  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 / 成就系统 / 星尘遗物 校验全部通过（46 组）');
+  console.log('✓ 存档自愈 / 战斗边界 / 剧情求值顺序 / 星陨林 / 古塔内部 / 第七巷 / 铃语斋与职业卡 / 成就系统 / 星尘遗物 / 淬炼与诅咒 校验全部通过（53 组）');
   process.exit(0);
 }
 

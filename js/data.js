@@ -93,6 +93,36 @@ DATA.CARDS = {
   purify:         { id: 'purify', name: '净化之光', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { cleanse: true, heal: 5 }, desc: '清除自身所有负面状态，恢复 5 点生命。' },
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
   mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
+
+  /* —— 淬炼变体 ——
+     铁匠铺 / 无面神龛可将对应基础卡淬炼成"+"形态（deck 中以独立 ID 存在）。
+     变体不进战斗奖励池、不进随机卡池、不计入冒险图鉴（见 combat.js / state.js）。 */
+  strike_up:        { id: 'strike_up', name: '打击+', up: true, base: 'strike', cost: 1, type: 'attack', cls: null, rarity: 'starter', target: 'enemy', fx: { dmg: 9 }, desc: '淬炼：造成 9 点伤害。' },
+  defend_up:        { id: 'defend_up', name: '防御+', up: true, base: 'defend', cost: 1, type: 'skill', cls: null, rarity: 'starter', target: 'self', fx: { block: 8 }, desc: '淬炼：获得 8 点护甲。' },
+  magic_bolt_up:    { id: 'magic_bolt_up', name: '魔弹+', up: true, base: 'magic_bolt', cost: 1, type: 'attack', cls: 'mage', rarity: 'starter', target: 'enemy', fx: { dmg: 8 }, desc: '淬炼：造成 8 点伤害。' },
+  arcane_shield_up: { id: 'arcane_shield_up', name: '奥术护盾+', up: true, base: 'arcane_shield', cost: 1, type: 'skill', cls: 'mage', rarity: 'starter', target: 'self', fx: { block: 6, draw: 1 }, desc: '淬炼：获得 6 点护甲，抽 1 张牌。' },
+  aim_shot_up:      { id: 'aim_shot_up', name: '精准射击+', up: true, base: 'aim_shot', cost: 1, type: 'attack', cls: 'ranger', rarity: 'starter', target: 'enemy', fx: { dmg: 9 }, desc: '淬炼：造成 9 点伤害。' },
+  heavy_slash_up:   { id: 'heavy_slash_up', name: '重斩+', up: true, base: 'heavy_slash', cost: 2, type: 'attack', cls: 'warrior', rarity: 'starter', target: 'enemy', fx: { dmg: 18 }, desc: '淬炼：造成 18 点伤害。' },
+  double_shot_up:   { id: 'double_shot_up', name: '双重射击+', up: true, base: 'double_shot', cost: 1, type: 'attack', cls: 'ranger', rarity: 'starter', target: 'enemy', fx: { dmg: 5, times: 2 }, desc: '淬炼：造成 5 点伤害，共 2 次。' },
+  dead_mark_up:     { id: 'dead_mark_up', name: '致命标记+', up: true, base: 'dead_mark', cost: 0, type: 'skill', cls: 'ranger', rarity: 'starter', target: 'enemy', fx: { statusEnemy: { vuln: 3 } }, desc: '淬炼：给予目标 3 层易伤。' },
+  war_cry_up:       { id: 'war_cry_up', name: '战吼+', up: true, base: 'war_cry', cost: 1, type: 'skill', cls: 'warrior', rarity: 'common', target: 'all', fx: { statusAllEnemy: { vuln: 2 } }, desc: '淬炼：所有敌人获得 2 层易伤。' },
+  cleave_up:        { id: 'cleave_up', name: '顺劈斩+', up: true, base: 'cleave', cost: 2, type: 'attack', cls: 'warrior', rarity: 'common', target: 'all', fx: { dmgAll: 12 }, desc: '淬炼：对所有敌人造成 12 点伤害。' },
+  iron_wall_up:     { id: 'iron_wall_up', name: '铁壁+', up: true, base: 'iron_wall', cost: 2, type: 'skill', cls: 'warrior', rarity: 'common', target: 'self', fx: { block: 16 }, desc: '淬炼：获得 16 点护甲。' },
+  pierce_up:        { id: 'pierce_up', name: '破甲+', up: true, base: 'pierce', cost: 1, type: 'attack', cls: 'warrior', rarity: 'common', target: 'enemy', fx: { dmg: 6, statusEnemy: { vuln: 3 } }, desc: '淬炼：造成 6 点伤害，给予 3 层易伤。' },
+  fireball_up:      { id: 'fireball_up', name: '火球术+', up: true, base: 'fireball', cost: 2, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 20 }, desc: '淬炼：造成 20 点伤害。' },
+  ice_shard_up:     { id: 'ice_shard_up', name: '冰锥+', up: true, base: 'ice_shard', cost: 1, type: 'attack', cls: 'mage', rarity: 'common', target: 'enemy', fx: { dmg: 7, statusEnemy: { weak: 2 } }, desc: '淬炼：造成 7 点伤害，给予 2 层虚弱。' },
+  meditate_up:      { id: 'meditate_up', name: '冥想+', up: true, base: 'meditate', cost: 1, type: 'skill', cls: 'mage', rarity: 'common', target: 'self', fx: { draw: 3 }, desc: '淬炼：抽 3 张牌。' },
+  poison_arrow_up:  { id: 'poison_arrow_up', name: '淬毒箭+', up: true, base: 'poison_arrow', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'enemy', fx: { dmg: 4, statusEnemy: { poison: 4 } }, desc: '淬炼：造成 4 点伤害，给予 4 层中毒。' },
+  swift_retreat_up: { id: 'swift_retreat_up', name: '灵巧后跃+', up: true, base: 'swift_retreat', cost: 1, type: 'skill', cls: 'ranger', rarity: 'common', target: 'self', fx: { block: 6, statusAllEnemy: { weak: 1 } }, desc: '淬炼：获得 6 点护甲，所有敌人获得 1 层虚弱。' },
+  first_aid_up:     { id: 'first_aid_up', name: '急救+', up: true, base: 'first_aid', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 14 }, desc: '淬炼：恢复 14 点生命。' },
+
+  /* —— 诅咒 ——
+     无法打出，只会占据抽牌位；drain:N = 回合结束时仍在手中则失去 N 点生命。
+     诅咒经 fx.curse 混入牌组，可在矿坑入口的泉水（净化）或铃语斋的忘却之铃中脱手。 */
+  whisper_brand: { id: 'whisper_brand', curse: true, name: '低语的烙印', cost: 0, type: 'curse', cls: null, rarity: 'curse', target: 'self', unplayable: true, desc: '无法打出。低语在你脑中数着心跳——它不走，也不响。' },
+  graven_sin:    { id: 'graven_sin', curse: true, name: '盗来的罪疚', cost: 0, type: 'curse', cls: null, rarity: 'curse', target: 'self', unplayable: true, desc: '无法打出。供品在你行囊里发烫，神龛空着的凹面仍在看你。' },
+  star_itch:     { id: 'star_itch', curse: true, name: '星蚀之痒', cost: 0, type: 'curse', cls: null, rarity: 'curse', target: 'self', unplayable: true, drain: 1, desc: '无法打出。回合结束时若仍在手中，失去 1 点生命。那点甜味，又痒又烫。' },
+  core_hunger:   { id: 'core_hunger', curse: true, name: '星核的饥馑', cost: 0, type: 'curse', cls: null, rarity: 'curse', target: 'self', unplayable: true, drain: 2, desc: '无法打出。回合结束时若仍在手中，失去 2 点生命。你吞下的东西，也在吞你。' },
 };
 
 /* ============================ 装备 ============================ */
@@ -359,7 +389,7 @@ function endlessRandomRelicId(s) {
 function endlessRandomCardId() {
   const pool = Object.keys(DATA.CARDS).filter((id) => {
     const r = DATA.CARDS[id].rarity;
-    return r === 'common' || r === 'rare';
+    return !DATA.CARDS[id].up && (r === 'common' || r === 'rare');
   });
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -515,6 +545,14 @@ DATA.SCENES = {
       { text: '✨ 星屑香囊 —— 85 金币', sub: '遗物 · 开战时全体敌人易伤 1 层', fx: { gold: -85, relic: 'star_pouch' }, requireGold: 85, show: (s) => !hasRelic(s, 'star_pouch'), go: 'smith' },
       { text: '💍 荆棘指环 —— 110 金币', sub: '遗物 · 受击反弹 3 点伤害', fx: { gold: -110, relic: 'thorn_ring' }, requireGold: 110, show: (s) => !hasRelic(s, 'thorn_ring'), go: 'smith' },
       { text: '🂠 卡牌【破甲】—— 80 金币', sub: '加入牌组：1 费 · 4 伤 + 2 易伤', fx: { gold: -80, card: 'pierce' }, requireGold: 80, once: 'bought_pierce', go: 'smith' },
+      {
+        text: '⚒️ 淬炼卡牌 —— 60 金币',
+        sub: '炉火与淬水：将一张卡牌淬炼成更强的"+"形态',
+        special: 'upgrade_card', requireGold: 60,
+        disabled: (s) => !s.deck.some((id) => DATA.CARDS[id + '_up']),
+        subFn: (s) => !s.deck.some((id) => DATA.CARDS[id + '_up']) ? '牌组里没有可淬炼的卡牌' : null,
+        go: 'smith',
+      },
       { text: '↩️ 回到镇中心', go: 'town' },
     ],
   },
@@ -729,7 +767,7 @@ DATA.SCENES = {
   wisp_deal: {
     text: '"小东西……"雾在你耳边凝成一张笑着的嘴。\n\n"泉底那点微光困了我百年。替我摘下它，我便教你让血肉燃起星火的秘法。\n\n——反正，这镇子的雾，又不是我造的。"',
     choices: [
-      { text: '🩸 "成交。"', sub: '获得禁忌卡牌 · 泉水将保持污浊', fx: { card: 'mist_pact', flag: 'wispDeal', note: 'wisp_pact' }, go: 'grove_path' },
+      { text: '🩸 "成交。"', sub: '获得禁忌卡牌与低语的烙印 · 泉水将保持污浊', fx: { card: 'mist_pact', curse: 'whisper_brand', flag: 'wispDeal', note: 'wisp_pact' }, go: 'grove_path' },
       { text: '✋ "泉底的，才是受害者。"', go: 'grove_heart_pre' },
     ],
   },
@@ -791,6 +829,12 @@ DATA.SCENES = {
         text: '💧 掬泉水畅饮，恢复全部生命', sub: '泉水澄澈，值得信任', once: 'spring_drunk',
         fx: { healPct: 100 }, go: 'mine_entrance',
       },
+      {
+        text: '🌀 在泉水中洗净一张诅咒卡', sub: '花费 40 金币 · 低语会散，水会记得',
+        special: 'purify_curse', requireGold: 40,
+        show: (s) => s.deck.some((id) => DATA.CARDS[id] && DATA.CARDS[id].curse),
+        go: 'mine_entrance',
+      },
       { text: '🕯️ 深入矿坑', go: 'mine_depths' },
       { text: '🏠 返回雾隐镇', sub: '补给与休整', go: 'town' },
     ],
@@ -809,6 +853,7 @@ DATA.SCENES = {
         fail: { text: '指尖刚触到岩壁，渣土簌簌而落——一具骷髅从墙里立了起来，眼窝里燃着幽火！', combat: 'skeleton_spider', win: 'depths_after' },
       },
       { text: '🆘 循着呼救声前进', sub: '有人还活着', once: 'miner_done', go: 'rescue_pre' },
+      { text: '🛕 探查巷道尽头的无面神龛', sub: '岩壁上的凹面 · 安静得反常', go: 'shrine' },
       {
         text: '🧱 走进搏动最响的第七巷', subFn: (s) => (s.flags.intel || s.flags.mine_map) ? '传闻与地图指向的尽头' : '心口的搏动在牵引你',
         go: 'seventh_tunnel',
@@ -870,6 +915,37 @@ DATA.SCENES = {
     text: '你清点战利品，靠着朽坏的支柱稍作喘息。\n\n雾从巷道深处漫上来，搏动声愈发清晰。',
     choices: [
       { text: '↩️ 返回矿坑一层', go: 'mine_depths' },
+    ],
+  },
+
+  /* —— 支线 · 无面神龛：淬炼 / 血祭 / 神龛的注视 ——
+     祝圣是一次性的（30 金币淬炼一张卡，比铁匠铺便宜）；
+     血祭与掳走供品各限一次，代价不同——神龛不评判，它只是记着。 */
+  shrine: {
+    text: (s) => s.flags.shrinePlundered
+      ? '神龛空了。龛中那道被摩挲得发亮的凹面，像一只阖上的眼睛。\n\n你行囊里的供品还隐隐发烫。你总觉得，雾在替它看着你。'
+      : '巷道尽头的岩壁上凿着一座小小的神龛。没有神像——只有一道被摩挲得发亮的凹面，像一张没有五官的脸。\n\n龛前积着前人留下的供品：几枚磨亮的铜钱，一小截白蜡。这里安静得反常，连墙里的搏动声都远了。\n\n凹面比岩石温热，像有什么在底下缓缓呼吸。',
+    choices: [
+      {
+        text: '🕯️ 献上 30 金币，求神龛祝圣',
+        subFn: (s) => s.flags.shrine_blessed ? '凹面已经冷了' : '火光照亮一张卡牌 · 将一张卡牌淬炼成"+"形态',
+        special: 'upgrade_card', upgradeCost: 30, requireGold: 30, upgradeFlag: 'shrine_blessed',
+        show: (s) => !s.flags.shrine_blessed,
+        go: 'shrine',
+      },
+      {
+        text: '🩸 割掌，滴血于凹面', sub: '以血为供 · 神龛授你一张稀有卡牌（失去 10% 生命上限）',
+        once: 'shrine_blood',
+        fxFn: (s) => ({ hpPct: -10, card: endlessRandomCardId() }),
+        go: 'shrine',
+      },
+      {
+        text: '⚱️ 掳走神龛的供品', sub: '铜钱入袋 · 神龛的目光也会跟着你（得到诅咒）',
+        once: 'shrinePlundered',
+        fx: { gold: 60, curse: 'graven_sin' },
+        go: 'shrine',
+      },
+      { text: '↩️ 恭敬地退开', go: 'mine_depths' },
     ],
   },
 
@@ -965,7 +1041,8 @@ DATA.SCENES = {
     text: '你凝视着碎片。黑暗在晶体深处盘旋，像在应和你血液里的冲动。\n\n这不洁净的力量将永远改变你。真的要这么做吗？',
     choices: [
       {
-        text: '🩸 "我要亲手终结这一切。"', fx: { flag2: { core: 'absorb' }, card: 'shadow_rage', stat: { pow: 1 } },
+        text: '🩸 "我要亲手终结这一切。"', sub: '禁忌之力 · 并非没有代价',
+        fx: { flag2: { core: 'absorb' }, card: 'shadow_rage', stat: { pow: 1 }, curse: 'core_hunger' },
         go: 'tower_gate',
       },
       { text: '✋ 再想想', go: 'core_choice' },
@@ -1300,8 +1377,8 @@ DATA.SCENES = {
     text: '门后没有房间——只有一道把石壁撑开的裂隙。\n\n星辉从缝隙深处漏出来，在地面淌成一小片银色的洼。风从裂隙里吹出来，带着一点很淡的、类似星屑的甜味。\n\n你的手比脑子先动了。',
     choices: [
       {
-        text: '🤲 掬一捧银色的洼', sub: '多半是甘泉 · 也可能烫手',
-        fxFn: () => (Math.random() < 0.65 ? { healPct: 35 } : { hpPct: -12 }),
+        text: '🤲 掬一捧银色的洼', sub: '多半是甘泉 · 也可能烫得钻心',
+        fxFn: () => (Math.random() < 0.65 ? { healPct: 35 } : { hp: -3, curse: 'star_itch' }),
         special: 'endless_pass',
       },
       {
@@ -1418,6 +1495,9 @@ DATA.ACHIEVEMENTS = {
   cycle_3:       { id: 'cycle_3', icon: '♾️', name: '雾中轮回', desc: '完成第 3 周目。', test: () => Cycle.count() >= 3 },
   diff_hard:     { id: 'diff_hard', icon: '🌫️', name: '试炼成王', desc: '以迷雾试炼（困难）难度通关任一结局。', test: (s) => s.diff === 1 && String(s.scene).indexOf('ending') === 0 },
   forget_3:      { id: 'forget_3', icon: '🌀', name: '忘却的铃声', desc: '在铃语斋以忘却之铃移除 3 张卡牌。', test: (s) => (s.stats.forgotten || 0) >= 3 },
+  forge_3:       { id: 'forge_3', icon: '⚒️', name: '千锤百炼', desc: '累计淬炼 3 张卡牌。', test: (s) => (s.stats.upgraded || 0) >= 3 },
+  curse_boss:    { id: 'curse_boss', icon: '☠️', name: '负罪而行', desc: '带着诅咒牌击败一场头目战。', test: (s) => s.flags.curseBossWin },
+  curse_pure:    { id: 'curse_pure', icon: '💧', name: '涤净烙印', desc: '以泉水洗净或忘却 3 张诅咒牌。', test: (s) => (s.stats.purified || 0) >= 3 },
   endless_5:     { id: 'endless_5', icon: '🌫️', name: '初入回廊', desc: '在迷雾回廊破开 5 重雾墙。', test: () => Endless.best() >= 5 },
   endless_10:    { id: 'endless_10', icon: '🌀', name: '回廊行者', desc: '在迷雾回廊破开 10 重雾墙。', test: () => Endless.best() >= 10 },
   endless_15:    { id: 'endless_15', icon: '♾️', name: '雾渊之主', desc: '在迷雾回廊破开 15 重雾墙。', test: () => Endless.best() >= 15 },

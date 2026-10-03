@@ -165,7 +165,23 @@ const Story = {
     if (ch.special === 'forget_card') {
       if (s.player.gold < (ch.requireGold || 0)) { UI.toast('金币不足', 'bad'); return; }
       if (s.deck.length <= 6) { UI.toast('牌组至少保留 6 张', 'bad'); return; }
-      UI.deckModal(true);
+      UI.deckModal('forget');
+      return;
+    }
+    /* 淬炼：铁匠铺（60 金币）/ 无面神龛（upgradeCost 覆写）。
+       神龛祝圣以 upgradeFlag 落旗（在弹窗内确认成功后才算数，取消不消耗一次性机会） */
+    if (ch.special === 'upgrade_card') {
+      const cost = ch.upgradeCost || ch.requireGold || 60;
+      if (s.player.gold < cost) { UI.toast('金币不足', 'bad'); return; }
+      if (!s.deck.some((id) => DATA.CARDS[id + '_up'])) { UI.toast('牌组里没有可淬炼的卡牌', 'bad'); return; }
+      UI.deckModal('upgrade', { cost, flag: ch.upgradeFlag || null });
+      return;
+    }
+    /* 净化：矿坑入口的泉水，洗去一张诅咒牌（40 金币，不计牌组下限） */
+    if (ch.special === 'purify_curse') {
+      if (s.player.gold < 40) { UI.toast('金币不足', 'bad'); return; }
+      if (!s.deck.some((id) => DATA.CARDS[id] && DATA.CARDS[id].curse)) { UI.toast('牌组里没有诅咒牌', 'bad'); return; }
+      UI.deckModal('purify');
       return;
     }
     if (ch.special === 'to_title') {

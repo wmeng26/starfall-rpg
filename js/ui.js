@@ -306,7 +306,8 @@ const UI = {
   /* 冒险图鉴弹窗（跨周目，无需存档）：卡牌 / 遗物 / 敌人 三栏 */
   codexModal(tab) {
     tab = tab || 'cards';
-    const RARITY = { starter: '初始', common: '普通', rare: '稀有', boss: '头目' };
+    const RARITY = { starter: '初始', common: '普通', rare: '稀有', boss: '头目', curse: '诅咒' };
+    const cardTotal = Object.keys(DATA.CARDS).filter((id) => !DATA.CARDS[id].up).length;
     const m = UI.modal('冒 险 图 鉴',
       '<div class="codex-tabs" id="codex-tabs"></div><div id="codex-body"></div>' +
       '<div class="cp-hint" id="codex-foot" style="text-align:center;margin-top:12px"></div>');
@@ -322,7 +323,7 @@ const UI = {
     const render = () => {
       const d = Codex.all();
       const tabsDef = [
-        ['cards', '🂠 卡牌', d.cards.length, Object.keys(DATA.CARDS).length],
+        ['cards', '🂠 卡牌', d.cards.length, cardTotal],
         ['relics', '⚱️ 遗物', d.relics.length, Object.keys(DATA.RELICS).length],
         ['enemies', '👹 敌人', d.enemies.length, Object.keys(DATA.ENEMIES).length],
       ];
@@ -333,10 +334,10 @@ const UI = {
       let body = '';
       if (tab === 'cards') {
         const groups = [['通用', null], ['战士', 'warrior'], ['法师', 'mage'], ['游侠', 'ranger']];
-        const rarityOrder = { starter: 0, common: 1, rare: 2, boss: 3 };
+        const rarityOrder = { starter: 0, common: 1, rare: 2, boss: 3, curse: 4 };
         for (const [gName, cls] of groups) {
           const list = Object.values(DATA.CARDS)
-            .filter((c) => (c.cls || null) === cls)
+            .filter((c) => !c.up && (c.cls || null) === cls)
             .sort((a, b) => (rarityOrder[a.rarity] || 9) - (rarityOrder[b.rarity] || 9));
           if (!list.length) continue;
           const got = list.filter((c) => Codex.has('cards', c.id)).length;
@@ -407,60 +408,100 @@ const UI = {
     UI.modal('冒 险 笔 记', html);
   },
 
-  /* 牌组浏览弹窗。forgetMode=true 时为「忘却之铃」：点选卡牌从牌组移除（40 金币） */
-  deckModal(forgetMode) {
+  /* 牌组浏览弹窗。mode:
+     'view'    浏览（默认）
+     'forget'  忘却之铃：点选卡牌从牌组移除（40 金币，牌组至少保留 6 张）
+     'upgrade' 淬炼：点选卡牌替换为"+"形态（cost 金币，可选 flag 在成功后落旗）
+     'purify'  泉水净化：点选诅咒牌将其移除（40 金币，不计牌组下限） */
+  deckModal(mode, opts) {
+    mode = mode || 'view';
+    opts = opts || {};
     const s = G.state;
+    const COSTS = { forget: 40, upgrade: opts.cost || 60, purify: 40 };
+    const TITLES = { forget: '忘 却 之 铃', upgrade: '淬 炼 炉 火', purify: '泉 眼 净 化' };
+    const filter = (id) => {
+      const cd = DATA.CARDS[id];
+      if (!cd) return false;
+      if (mode === 'purify') return !!cd.curse;
+      if (mode === 'upgrade') return !!DATA.CARDS[id + '_up'];
+      return true;
+    };
     const counts = {};
     for (const c of s.deck) counts[c] = (counts[c] || 0) + 1;
     let html = '<div style="text-align:center">';
     for (const id in counts) {
-      html += UI.cardHtml(DATA.CARDS[id], { count: counts[id], cls: 'deck-card' + (forgetMode ? ' forgetable' : ''), dataIdx: forgetMode ? id : undefined });
+      if (!filter(id)) continue;
+      html += UI.cardHtml(DATA.CARDS[id], { count: counts[id], cls: 'deck-card' + (mode !== 'view' ? ' forgetable' : ''), dataIdx: mode !== 'view' ? id : undefined });
     }
     html += '</div>';
-    if (forgetMode) {
+    if (mode === 'forget') {
       html = '<div class="cp-hint" style="text-align:center;margin-bottom:8px">点击一张卡牌将其忘却（40 金币）——再点一次确认。<br>牌组至少保留 6 张，点击 ✕ 关闭不做任何改动。</div>' + html;
+    } else if (mode === 'upgrade') {
+      html = '<div class="cp-hint" style="text-align:center;margin-bottom:8px">点击一张卡牌淬炼成"+"形态（' + COSTS.upgrade + ' 金币）——再点一次确认。<br>同名卡牌每一张单独淬炼，点击 ✕ 关闭不做任何改动。</div>' + html;
+    } else if (mode === 'purify') {
+      html = '<div class="cp-hint" style="text-align:center;margin-bottom:8px">点击一张诅咒牌，让泉水把它洗净（40 金币）——再点一次确认。</div>' + html;
     }
     html += '<div style="text-align:center;margin-top:10px"><button class="ghost-btn" id="btn-codex">📖 查看全图鉴</button></div>';
-    const m = UI.modal(forgetMode ? '忘 却 之 铃' : '牌 组（' + s.deck.length + ' 张）', html);
+    const m = UI.modal(TITLES[mode] || ('牌组（' + s.deck.length + ' 张）'), html);
     const cb = m.mask.querySelector('#btn-codex');
     if (cb) cb.onclick = () => { m.close(); UI.codexModal('cards'); };
-    if (forgetMode) {
-      let armed = null;
-      m.mask.querySelectorAll('.deck-card.forgetable').forEach((el) => {
-        el.onclick = () => {
-          const cid = el.dataset.cardIdx;
-          if (!DATA.CARDS[cid]) return;
-          /* 两段确认：首点标记，再点执行 */
-          if (armed !== cid) {
-            armed = cid;
-            m.mask.querySelectorAll('.deck-card.forgetable').forEach((o) => o.classList.remove('selected'));
-            el.classList.add('selected');
-            UI.toast('再点一次确认忘却【' + DATA.CARDS[cid].name + '】', '');
-            return;
-          }
-          if (s.player.gold < 40) { UI.toast('金币不足', 'bad'); return; }
-          if (s.deck.length <= 6) { UI.toast('牌组至少保留 6 张', 'bad'); return; }
-          s.player.gold -= 40;
-          s.deck.splice(s.deck.indexOf(cid), 1);
-          s.stats.forgotten = (s.stats.forgotten || 0) + 1;
-          UI.log('🌀 忘却之铃响起——你忘却了【' + DATA.CARDS[cid].name + '】（40 金币）', 'sys');
-          UI.toast('🌀 已忘却【' + DATA.CARDS[cid].name + '】', 'good');
-          Sfx.play('card');
-          Achieve.check(s);
-          Save.write(s);
-          UI.renderHud();
-          m.close();
-          UI.deckModal(true); /* 重开以刷新牌面与计数 */
-          if (typeof Story !== 'undefined' && Story.rerender) Story.rerender();
-        };
-      });
-    }
+    if (mode === 'view') return;
+
+    const cost = COSTS[mode] || 0;
+    let armed = null;
+    const act = (cid) => {
+      const cd = DATA.CARDS[cid];
+      if (!cd) return;
+      /* 两段确认：首点标记，再点执行 */
+      if (armed !== cid) {
+        armed = cid;
+        m.mask.querySelectorAll('.deck-card.forgetable').forEach((o) => o.classList.remove('selected'));
+        m.mask.querySelectorAll('.deck-card.forgetable').forEach((o) => { if (o.dataset.cardIdx === cid) o.classList.add('selected'); });
+        const verb = mode === 'forget' ? '忘却' : mode === 'upgrade' ? '淬炼' : '洗净';
+        UI.toast('再点一次确认' + verb + '【' + cd.name + '】', '');
+        return;
+      }
+      if (s.player.gold < cost) { UI.toast('金币不足', 'bad'); return; }
+      if (mode === 'forget' && s.deck.length <= 6) { UI.toast('牌组至少保留 6 张', 'bad'); return; }
+
+      s.player.gold -= cost;
+      if (mode === 'forget') {
+        s.deck.splice(s.deck.indexOf(cid), 1);
+        s.stats.forgotten = (s.stats.forgotten || 0) + 1;
+        if (cd.curse) s.stats.purified = (s.stats.purified || 0) + 1;
+        UI.log('🌀 忘却之铃响起——你忘却了【' + cd.name + '】（40 金币）', 'sys');
+        UI.toast('🌀 已忘却【' + cd.name + '】', 'good');
+      } else if (mode === 'upgrade') {
+        const upId = cid + '_up';
+        s.deck.splice(s.deck.indexOf(cid), 1, upId);
+        s.stats.upgraded = (s.stats.upgraded || 0) + 1;
+        if (opts.flag) s.flags[opts.flag] = true;
+        UI.log('⚒️ 淬炼炉火通明——【' + DATA.CARDS[upId].name + '】在锤下成形（' + cost + ' 金币）', 'sys');
+        UI.toast('⚒️ 已淬炼【' + DATA.CARDS[upId].name + '】', 'good');
+      } else if (mode === 'purify') {
+        s.deck.splice(s.deck.indexOf(cid), 1);
+        s.stats.purified = (s.stats.purified || 0) + 1;
+        UI.log('💧 泉水漫过指缝——诅咒【' + cd.name + '】被洗去了（40 金币）', 'sys');
+        UI.toast('💧 已洗净【' + cd.name + '】', 'good');
+      }
+      Sfx.play('card');
+      Achieve.check(s);
+      Save.write(s);
+      UI.renderHud();
+      m.close();
+      UI.deckModal(mode, opts); /* 重开以刷新牌面与计数 */
+      if (typeof Story !== 'undefined' && Story.rerender) Story.rerender();
+    };
+    m.mask.querySelectorAll('.deck-card.forgetable').forEach((el) => {
+      el.onclick = () => act(el.dataset.cardIdx);
+    });
   },
 
   /* 卡牌 HTML */
   cardHtml(card, opts) {
     opts = opts || {};
-    const typeIcon = { attack: '⚔️ 攻击', skill: '🛡️ 技能', power: '✨ 能力' }[card.type];
+    const typeIcon = { attack: '⚔️ 攻击', skill: '🛡️ 技能', power: '✨ 能力', curse: '☠️ 诅咒' }[card.type];
+    const art = { attack: '⚔️', skill: '🛡️', power: '✨', curse: '☠️' }[card.type] || '🂠';
     return '<div class="card type-' + card.type + (opts.cls ? ' ' + opts.cls : '') + '"' +
       (opts.dataIdx !== undefined ? ' data-card-idx="' + opts.dataIdx + '"' : '') + '>' +
       (opts.tag ? '<span class="card-count">' + opts.tag + '</span>' : '') +
@@ -468,7 +509,7 @@ const UI = {
       '<div class="card-cost">' + card.cost + '</div>' +
       '<div class="card-name">' + card.name + '</div>' +
       '<div class="card-type">' + typeIcon + '</div>' +
-      '<div class="card-art">' + (card.type === 'attack' ? '⚔️' : card.type === 'skill' ? '🛡️' : '✨') + '</div>' +
+      '<div class="card-art">' + art + '</div>' +
       '<div class="card-desc">' + card.desc + '</div>' +
       '</div>';
   },
@@ -486,6 +527,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 卡牌战斗</b><br>每回合获得 <span class="k">3 点行动力</span>，抽 5 张牌。点击卡牌打出：攻击敌方、获取护甲、施加状态。护甲只在本回合内有效。<br>敌人头顶会展示<b>意图</b>（⚔️攻击 / 🛡️防御 / ⬆️强化 / ☠️诅咒），据此制定策略。<br><span class="k">中毒</span>每回合扣血递减 · <span class="k">虚弱</span>输出 ×0.75 · <span class="k">易伤</span>受伤 ×1.5 · <span class="k">力量</span>每次攻击 +N 伤。</div>' +
       '<div class="help-sec"><b>▸ 成长</b><br>战斗胜利获得金币、经验，并从 3 张卡牌中挑选 1 张加入牌组。装备提供永久加成，药水可随时使用。</div>' +
       '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
+      '<div class="help-sec"><b>▸ 淬炼与诅咒</b><br>铁匠铺提供 <span class="k">⚒️ 淬炼</span>（60 金币）：把一张可淬炼的卡牌锤炼成更强的"+"形态，同名卡牌每张单独淬炼。矿坑一层深处藏着 <span class="k">🛕 无面神龛</span>——祝圣、血祭或掳走供品，各有机缘与代价。<br>某些交易与贪念会让 <span class="k">☠️ 诅咒牌</span> 混进牌组：无法打出，只会占据抽牌位，有的还会在回合结束时限你仍在握着它时索取生命。矿坑入口的泉水可以洗净诅咒（40 金币），铃语斋的忘却之铃同样能让它脱手。</div>' +
       '<div class="help-sec"><b>▸ 冒险图鉴</b><br><span class="k">📖 冒险图鉴</span>跨周目收录你获得过的卡牌、持有过的遗物与击败过的敌人。标题画面、菜单或牌组弹窗的"查看全图鉴"均可查阅；未收录的条目以 ？？？ 显示。</div>' +
       '<div class="help-sec"><b>▸ 多周目与难度</b><br>每次开局的界面可选 <span class="k">磨砺（标准）</span> 或 <span class="k">迷雾试炼（困难）</span>：试炼下敌人生命 ×1.35、伤害 +2，但战利品 ×1.25。<br>通关任一结局后，标题画面解锁 <span class="k">✦ 继承开局</span>：带着上一世的全部星尘遗物与半程金币进入下一周目，敌人的血与爪随周目递增。铃语斋还提供 <span class="k">忘却之铃</span>（40 金币），可以从牌组移除一张卡牌，让套路更纯粹。</div>' +
       '<div class="help-sec"><b>▸ 迷雾回廊（无尽模式）</b><br>通关任一结局后，标题画面解锁 <span class="k">🌫 迷雾回廊</span>：选好职业与难度，一层层破开越来越强的雾墙——敌人生命与伤害随层数无限增长。每五层是一场<span class="k">回响头目</span>战，胜后可从三件未持有的星尘遗物中挑选一件；第 5 层起，头目卡也会混入战斗奖励。质数层的雾墙根部会裂开<span class="k">🚪 侧门</span>：推开它可绕过战斗，直面石碑、篝火、行商、窃贼、裂隙、暗室六种回廊异变——门后是福是祸，难说。门厅的星尘泉水每五层涌出一次，营地休整则随深度涨价。倒下不影响主世界存档的纪录——最深层数跨周目保存。</div>' +

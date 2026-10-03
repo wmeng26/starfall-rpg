@@ -378,6 +378,9 @@ button, .card, .choice-btn, .enemy-card, .item-use { touch-action: manipulation;
 .card.type-attack { border-color: #7a3b3b; }
 .card.type-skill { border-color: #3b5a7a; }
 .card.type-power { border-color: #7a6a3b; }
+.card.type-curse { border-color: #6e3b7a; background: linear-gradient(180deg, #2a1e33 0%, #1a1423 100%); }
+.card.type-curse .card-name { color: #b98cd0; }
+.card.type-curse .card-art { filter: drop-shadow(0 0 6px rgba(185,140,208,.45)); }
 .card-cost {
   position: absolute; top: -10px; left: -8px;
   width: 30px; height: 30px; line-height: 28px; text-align: center;

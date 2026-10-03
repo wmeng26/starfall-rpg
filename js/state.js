@@ -140,8 +140,9 @@ const Codex = {
       cards: [], relics: [], enemies: [],
       ...(d && typeof d === 'object' ? d : {}),
     };
-    /* 数据版本更新后清理失效 ID（与存档自愈同一思路） */
-    this._data.cards = this._data.cards.filter((id) => !!DATA.CARDS[id]);
+    /* 数据版本更新后清理失效 ID（与存档自愈同一思路）；
+       淬炼变体（up）是基础卡的强化形态，不算独立的图鉴条目 */
+    this._data.cards = this._data.cards.filter((id) => !!DATA.CARDS[id] && !DATA.CARDS[id].up);
     this._data.relics = this._data.relics.filter((id) => !!DATA.RELICS[id]);
     this._data.enemies = this._data.enemies.filter((id) => !!DATA.ENEMIES[id]);
     return this._data;
@@ -152,7 +153,7 @@ const Codex = {
     const arr = this.all()[kind];
     let added = 0;
     for (const id of (Array.isArray(ids) ? ids : [ids])) {
-      if (!id || !defs[id] || arr.indexOf(id) >= 0) continue;
+      if (!id || !defs[id] || defs[id].up || arr.indexOf(id) >= 0) continue;
       arr.push(id);
       added += 1;
     }
@@ -170,7 +171,8 @@ const Codex = {
     return kind ? d[kind].length : d.cards.length + d.relics.length + d.enemies.length;
   },
   total() {
-    return Object.keys(DATA.CARDS).length + Object.keys(DATA.RELICS).length + Object.keys(DATA.ENEMIES).length;
+    const cards = Object.keys(DATA.CARDS).filter((id) => !DATA.CARDS[id].up);
+    return cards.length + Object.keys(DATA.RELICS).length + Object.keys(DATA.ENEMIES).length;
   },
 };
 
@@ -434,6 +436,16 @@ function applyEffects(state, fx) {
   if (fx.card) {
     state.deck.push(fx.card);
     UI.log('🂠 获得卡牌【' + DATA.CARDS[fx.card].name + '】', 'gain');
+  }
+  if (fx.curse) {
+    /* 诅咒卡：混入牌组的负担（可在泉水净化或以忘却之铃脱手） */
+    state.deck.push(fx.curse);
+    const cd = DATA.CARDS[fx.curse];
+    if (cd) {
+      UI.log('☠️ 诅咒【' + cd.name + '】缠上了你的牌组——' + cd.desc, 'battle');
+      UI.toast('☠️ 诅咒：' + cd.name, 'bad');
+      Sfx.play('lose');
+    }
   }
   if (fx.gear) {
     const gd = DATA.GEAR[fx.gear];

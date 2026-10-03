@@ -1,5 +1,6 @@
 # 测试生成的截图与缓存
 tools/shots/
+tools/.gen-*.js
 __pycache__/
 *.pyc
 
@@ -9,3 +10,4 @@ Desktop.ini
 
 # 会话工具本地文件
 .workbuddy/
+.mimosa/

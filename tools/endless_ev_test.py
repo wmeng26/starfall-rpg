@@ -362,7 +362,8 @@ with sync_playwright() as p:
     scene_text(page)
     pick(page, '离开回廊')
     page.wait_for_timeout(400)
-    check('29' in page.locator('#t-achv').inner_text(), '标题成就计数更新为 29')
+    achv_total = page.evaluate('Object.keys(DATA.ACHIEVEMENTS).length')
+    check(str(achv_total) in page.locator('#t-achv').inner_text(), '标题成就计数更新为 %d' % achv_total)
 
     # ================= 14. 回归：普通局不受侧门影响 =================
     page.evaluate('localStorage.removeItem("starfall_rpg_save_v1")')

@@ -2,6 +2,10 @@
 /* ============================================================
    数据一致性校验：node tools/validate.js
    检查语法 + 所有 ID 引用（卡牌/装备/物品/敌群/场景跳转）
+
+   载入方式：把游戏源码装配成 CommonJS 模块文件后静态 require。
+   生成文件固定写入本目录（.gen-*.js，已被 .gitignore 忽略），
+   进程退出时清理——不使用 new Function / vm 等动态编译。
    ============================================================ */
 const fs = require('fs');
 const path = require('path');
@@ -10,25 +14,49 @@ const ROOT = path.join(__dirname, '..');
 let errors = 0;
 const err = (msg) => { console.error('  ✗ ' + msg); errors++; };
 
+/* 退出时清理本轮生成的模块文件 */
+const GEN_FILES = [];
+process.on('exit', () => {
+  for (const f of GEN_FILES) { try { fs.unlinkSync(f); } catch (e) {} }
+});
+
 /* ---------- 1. 语法检查 ---------- */
+/* 每个源文件包一层通用 DOM 桩后作为模块载入：能加载即语法与顶层求值无误 */
 console.log('== 语法检查 ==');
+const SYNTAX_STUBS =
+  'const document={addEventListener(){},querySelector:()=>null,querySelectorAll:()=>[],getElementById:()=>null,createElement:()=>({}),body:{}};' +
+  'const window={addEventListener(){},AudioContext:null};\n';
+const GEN_SYNTAX = path.join(__dirname, '.gen-syntax.js');
+GEN_FILES.push(GEN_SYNTAX);
 for (const f of ['data.js', 'state.js', 'ui.js', 'story.js', 'combat.js', 'main.js']) {
   const src = fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');
-  try { new Function(src); console.log('  ✓ js/' + f); }
-  catch (e) { err('js/' + f + ' 语法错误: ' + e.message); }
+  fs.writeFileSync(GEN_SYNTAX, SYNTAX_STUBS + src + '\n;module.exports = 1;');
+  try {
+    delete require.cache[require.resolve('./.gen-syntax.js')];
+    require('./.gen-syntax.js');
+    console.log('  ✓ js/' + f);
+  } catch (e) { err('js/' + f + ' 语法错误: ' + e.message); }
 }
 if (errors) process.exit(1);
 
 /* ---------- 2. 载入数据 ---------- */
 const dataSrc = fs.readFileSync(path.join(ROOT, 'js', 'data.js'), 'utf8');
 const stateSrc = fs.readFileSync(path.join(ROOT, 'js', 'state.js'), 'utf8');
-const DATA = new Function(dataSrc + '\n;return DATA;')();
+
+const GEN_DATA = path.join(__dirname, '.gen-data.js');
+GEN_FILES.push(GEN_DATA);
+fs.writeFileSync(GEN_DATA, dataSrc + '\n;module.exports = { DATA };');
+const DATA = require('./.gen-data.js').DATA;
 
 /* 带 UI 桩的沙盒，测试角色/效果逻辑 */
-const sandbox = new Function(
+const GEN_SANDBOX = path.join(__dirname, '.gen-sandbox.js');
+GEN_FILES.push(GEN_SANDBOX);
+fs.writeFileSync(GEN_SANDBOX,
+  "'use strict';\n" +
   'const UI={log(){},toast(){}};const Sfx={play(){}};\n' + dataSrc + '\n' + stateSrc +
-  '\n;return { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex, Cycle, Endless, enemyScale, endlessGroupKey };'
-)();
+  '\n;module.exports = { DATA, newGameState, applyEffects, gainXp, gearBonus, effStat, xpNeeded, Quest, Note, hasRelic, relicSum, checkMod, Codex, Cycle, Endless, enemyScale, endlessGroupKey };'
+);
+const sandbox = require('./.gen-sandbox.js');
 
 console.log('== 数据引用检查 ==');
 
@@ -52,14 +80,24 @@ const FX_KEYS = ['dmg', 'times', 'dmgAll', 'block', 'heal', 'hp', 'draw', 'energ
 const STATUSES = ['poison', 'weak', 'vuln', 'strength'];
 for (const id in CARDS) {
   const c = CARDS[id];
+  const fx = c.fx || {};
   if (c.id !== id) err('卡牌 id 不一致: ' + id);
-  if (!['attack', 'skill', 'power'].includes(c.type)) err('卡牌 ' + id + ' 类型非法: ' + c.type);
+  if (!['attack', 'skill', 'power', 'curse'].includes(c.type)) err('卡牌 ' + id + ' 类型非法: ' + c.type);
   if (!['enemy', 'all', 'self'].includes(c.target)) err('卡牌 ' + id + ' 目标非法: ' + c.target);
   if (c.cls && !CLASSES[c.cls]) err('卡牌 ' + id + ' 未知职业: ' + c.cls);
-  for (const k in c.fx) if (!FX_KEYS.includes(k)) err('卡牌 ' + id + ' 未知 fx 字段: ' + k);
+  if (c.type === 'curse' && !c.unplayable) err('诅咒牌 ' + id + ' 缺少 unplayable');
+  for (const k in fx) if (!FX_KEYS.includes(k)) err('卡牌 ' + id + ' 未知 fx 字段: ' + k);
   for (const k of ['statusEnemy', 'statusAllEnemy', 'statusSelf']) {
-    if (c.fx[k]) for (const s in c.fx[k]) if (!STATUSES.includes(s)) err('卡牌 ' + id + ' 未知状态: ' + s);
+    if (fx[k]) for (const s in fx[k]) if (!STATUSES.includes(s)) err('卡牌 ' + id + ' 未知状态: ' + s);
   }
+}
+/* 淬炼变体：up 卡必须回指存在的基础卡，且命名遵循 base + '_up' */
+for (const id in CARDS) {
+  const c = CARDS[id];
+  if (!c.up) continue;
+  if (!c.base || !CARDS[c.base]) err('变体 ' + id + ' 缺少有效的 base');
+  else if (c.base + '_up' !== id) err('变体 ' + id + ' 命名应遵循 base + "_up"');
+  else if (CARDS[c.base].type !== c.type) err('变体 ' + id + ' 与基础卡类型不一致');
 }
 
 /* 敌人与敌群 */
@@ -118,6 +156,7 @@ const checkScene = (from, id) => { if (id && !SCENES[id]) err('场景 ' + from +
 const checkFx = (sid, fx, tag) => {
   if (!fx) return;
   if (fx.card && !CARDS[fx.card]) err('场景 ' + sid + ' ' + tag + 'fx.card 未知: ' + fx.card);
+  if (fx.curse && (!CARDS[fx.curse] || !CARDS[fx.curse].curse)) err('场景 ' + sid + ' ' + tag + 'fx.curse 应指向诅咒牌: ' + fx.curse);
   if (fx.item && !ITEMS[fx.item]) err('场景 ' + sid + ' ' + tag + 'fx.item 未知: ' + fx.item);
   if (fx.useItem && !ITEMS[fx.useItem]) err('场景 ' + sid + ' ' + tag + 'fx.useItem 未知: ' + fx.useItem);
   if (fx.gear && !GEAR[fx.gear]) err('场景 ' + sid + ' ' + tag + 'fx.gear 未知: ' + fx.gear);
@@ -129,8 +168,7 @@ const checkFx = (sid, fx, tag) => {
 };
 /* 场景函数内直接调用的 Quest.add / Note.add / Quest.done 字符串引用 */
 const questRefRe = /(?:Quest|Note)\.(add|done)\(\s*s\s*,\s*['"]([\w]+)['"]\s*\)/g;
-let m;
-while ((m = questRefRe.exec(dataSrc)) !== null) {
+for (const m of dataSrc.matchAll(questRefRe)) {
   const [ , fn, id ] = m;
   const isNote = m[0].startsWith('Note');
   if (isNote) { if (!DATA.NOTES[id]) err('Note.add 未知笔记: ' + id); }
@@ -138,7 +176,7 @@ while ((m = questRefRe.exec(dataSrc)) !== null) {
 }
 /* 场景函数内 relics.push 的字面量引用 */
 const relicPushRe = /relics\.push\(\s*['"]([\w]+)['"]\s*\)/g;
-while ((m = relicPushRe.exec(dataSrc)) !== null) {
+for (const m of dataSrc.matchAll(relicPushRe)) {
   if (!DATA.RELICS[m[1]]) err('relics.push 未知遗物: ' + m[1]);
 }
 for (const sid of sceneIds) {
@@ -159,7 +197,7 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'upgrade_card', 'purify_curse', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
     if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
@@ -233,7 +271,7 @@ if (cod.count('enemies') !== 2) err('敌人收录/去重失败: ' + cod.count('e
 cod.markState({ deck: ['strike'], relics: ['silver_tongue'] });
 if (cod.count('relics') !== 1) err('遗物收录失败: ' + cod.count('relics'));
 if (cod.count() !== cod.count('cards') + cod.count('relics') + cod.count('enemies')) err('图鉴总数与分栏不一致');
-if (cod.total() !== Object.keys(CARDS).length + Object.keys(RELICS).length + Object.keys(ENEMIES).length) err('图鉴 total 与数据不一致');
+if (cod.total() !== Object.keys(CARDS).filter((id) => !CARDS[id].up).length + Object.keys(RELICS).length + Object.keys(ENEMIES).length) err('图鉴 total 与数据不一致（变体不应计入）');
 if (!cod.has('cards', 'strike') || cod.has('relics', 'watch')) err('Codex.has 判定失败');
 /* 图鉴向成就的 test 可执行且类型正确（须在含 state.js 的沙盒里调，test 引用 Codex） */
 for (const aid of ['codex_cards', 'codex_relics', 'codex_enemies']) {
@@ -290,16 +328,21 @@ const fakeEl = () => ({
   getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }),
   children: [], firstChild: null, scrollTop: 0, scrollHeight: 0,
 });
-const combatSandbox = new Function('document', 'window', 'localStorage', 'Main',
+const GEN_COMBAT = path.join(__dirname, '.gen-combat.js');
+GEN_FILES.push(GEN_COMBAT);
+fs.writeFileSync(GEN_COMBAT,
+  "'use strict';\n" +
+  'module.exports = function (deps) {\n' +
+  '  const document = deps.document, window = deps.window, localStorage = deps.localStorage, Main = deps.Main;\n' +
   ['data.js', 'state.js', 'ui.js', 'story.js', 'combat.js'].map(readJs).join('\n') +
-  '\n;return { G, Combat, Story, newGameState };'
-)(
-  { querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
+  '\n;return { G, Combat, Story, newGameState };\n};\n');
+const combatSandbox = require('./.gen-combat.js')({
+  document: { querySelector: () => fakeEl(), querySelectorAll: () => [], createElement: () => fakeEl(),
     getElementById: () => fakeEl(), addEventListener() {}, body: fakeEl() },
-  { addEventListener() {}, AudioContext: null },
-  { getItem: () => null, setItem() {}, removeItem() {} },
-  { showDeath() { deathCount += 1; } }
-);
+  window: { addEventListener() {}, AudioContext: null },
+  localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+  Main: { showDeath() { deathCount += 1; } },
+});
 const { G, Combat, Story, newGameState } = combatSandbox;
 
 (async () => {
