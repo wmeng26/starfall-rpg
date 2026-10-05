@@ -279,7 +279,7 @@ with sync_playwright() as p:
       Achieve.check(G.state);
     ''')
     check(ev(page, 'Achieve.has("codex_enemies_15")'), '成就「雾中百景·贰」解锁（收录 15 种敌人）')
-    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 38, '成就总数 38')
+    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 41, '成就总数 41')
     check(ev(page, 'DATA.ACHIEVEMENTS.codex_relics.desc.indexOf(String(Object.keys(DATA.RELICS).length)) >= 0'), '「星尘全图」描述随遗物总数动态更新')
 
     browser.close()

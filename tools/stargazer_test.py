@@ -241,7 +241,7 @@ with sync_playwright() as p:
     check(kept, '星兆随存档持久化（读取后仍在）')
     page.evaluate('G.state.flags.bossDown = true; Achieve.check(G.state)')
     check(ev(page, 'Achieve.has("star_priest")'), '星祭司击败头目 → 成就「新星初升」解锁')
-    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 38, '成就总数 38（36 + 星祭司/观星 ×2）')
+    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 41, '成就总数 41（36 + 星祭司/观星 ×2 + 裂谷 ×3）')
 
     # 推演成功支的笔记/经验注册在 success 分支上
     check(ev(page, 'DATA.NOTES.veras_prophecy && DATA.SCENES.stargazer.choices.some(c => c.success && c.success.fx && c.success.fx.note === "veras_prophecy")'), '推演成功支的笔记已注册')

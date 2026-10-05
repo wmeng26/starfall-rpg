@@ -134,6 +134,12 @@ DATA.CARDS = {
   shadow_rage:    { id: 'shadow_rage', name: '影之怒', cost: 3, type: 'attack', cls: null, rarity: 'boss', target: 'all', fx: { dmgAll: 12, statusAllEnemy: { weak: 1 } }, desc: '对所有敌人造成 12 点伤害，给予 1 层虚弱。' },
   mist_pact:      { id: 'mist_pact', name: '雾之契约', cost: 1, type: 'power', cls: null, rarity: 'boss', target: 'self', fx: { statusSelf: { strength: 2, weak: 1 } }, desc: '获得 2 层力量与 1 层虚弱。低语在你脑中盘旋不去。' },
 
+  /* —— 坠星裂谷 ——
+     星坠之夜的余烬与回声：灼烧（中毒）、星潮（行动力）与顺着星坠方向的一击。 */
+  star_ember:     { id: 'star_ember', name: '星烬', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'enemy', fx: { dmg: 5, statusEnemy: { poison: 2 } }, desc: '掷出一撮仍在燃烧的星屑，造成 5 点伤害，施加 2 层灼烧（中毒）。' },
+  star_surge:     { id: 'star_surge', name: '星潮涌动', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 6, energy: 1 }, desc: '塔影下涌动的星潮漫过臂甲：获得 6 点护甲，获得 1 点行动力。' },
+  falling_star:   { id: 'falling_star', name: '坠星击', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'enemy', fx: { dmg: 12, statusEnemy: { vuln: 1 } }, desc: '顺着星坠的方向掷出全力一击，造成 12 点伤害，给予 1 层易伤。谷底的星鸣教你的一式。' },
+
   /* —— 淬炼变体 ——
      铁匠铺 / 无面神龛可将对应基础卡淬炼成"+"形态（deck 中以独立 ID 存在）。
      变体不进战斗奖励池、不进随机卡池、不计入冒险图鉴（见 combat.js / state.js）。 */
@@ -165,6 +171,9 @@ DATA.CARDS = {
   halo_up:          { id: 'halo_up', name: '星辉庇护+', up: true, base: 'halo', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { block: 8 }, desc: '淬炼：获得 8 点护甲。' },
   star_mend_up:     { id: 'star_mend_up', name: '星愈术+', up: true, base: 'star_mend', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { heal: 10 }, desc: '淬炼：恢复 10 点生命。' },
   star_blade_up:    { id: 'star_blade_up', name: '星刃+', up: true, base: 'star_blade', cost: 1, type: 'attack', cls: 'priest', rarity: 'starter', target: 'enemy', fx: { dmg: 6, statusEnemy: { weak: 2 } }, desc: '淬炼：造成 6 点伤害，给予 2 层虚弱。' },
+  star_ember_up:    { id: 'star_ember_up', name: '星烬+', up: true, base: 'star_ember', cost: 1, type: 'attack', cls: null, rarity: 'common', target: 'enemy', fx: { dmg: 7, statusEnemy: { poison: 3 } }, desc: '淬炼：造成 7 点伤害，施加 3 层灼烧。' },
+  star_surge_up:    { id: 'star_surge_up', name: '星潮涌动+', up: true, base: 'star_surge', cost: 1, type: 'skill', cls: null, rarity: 'rare', target: 'self', fx: { block: 9, energy: 1 }, desc: '淬炼：获得 9 点护甲，获得 1 点行动力。' },
+  falling_star_up:  { id: 'falling_star_up', name: '坠星击+', up: true, base: 'falling_star', cost: 2, type: 'attack', cls: null, rarity: 'rare', target: 'enemy', fx: { dmg: 16, statusEnemy: { vuln: 2 } }, desc: '淬炼：造成 16 点伤害，给予 2 层易伤。' },
 
   /* —— 诅咒 ——
      无法打出，只会占据抽牌位；drain:N = 回合结束时仍在手中则失去 N 点生命。
@@ -236,6 +245,8 @@ DATA.RELICS = {
   dew_ring:       { id: 'dew_ring', name: '雾露指环', icon: '💧', enemyWeak: 1, desc: '战斗开始时，所有敌人获得 1 层虚弱。雾凝成的指环——戴上它，连敌手的动作都慢了半拍。' },
   rusted_goad:    { id: 'rusted_goad', name: '锈刺赶棒', icon: '🔩', vulnPlus: 1, desc: '你施加的易伤额外 +1 层。棒上的倒刺早就锈死了，可兽还记得疼。' },
   meteor_charm:   { id: 'meteor_charm', name: '陨铁护符', icon: '🪬', startStrength: 1, startBlock: 3, desc: '战斗开始时获得 1 层力量与 3 点护甲。观星屋有售——那块星坠之夜落进后山的铁，摸上去总是温的。' },
+  goat_bell:      { id: 'goat_bell', name: '悬羊铜铃', icon: '🐐', check: { stat: 'agi', v: 2 }, desc: '敏捷检定 +2。牧人把铜铃系上头羊的角，山道再险，落脚石也听得清。初代守塔人的旧补给里裹着它。' },
+  ember_heart:    { id: 'ember_heart', name: '烬心炉', icon: '🪔', startBlock: 4, desc: '战斗开始时获得 4 点护甲。影之先驱溃散处凝出的一小簇炉火——雾绕着它走。' },
 };
 
 /* ============================ 敌人 ============================
@@ -326,6 +337,24 @@ DATA.ENEMIES = {
     { name: '腐化之息', toPlayer: { poison: 2 }, w: 2 },
     { name: '雾隐', block: 10, self: { strength: 1 }, w: 1 },
   ]},
+  /* —— 坠星裂谷 ——
+     星坠之夜犁出的伤疤：以星屑为食的走兽、自燃不熄的余烬，与雾的先遣。 */
+  ember_wisp:   { id: 'ember_wisp', name: '余烬之灵', art: '🔥', hp: 16, xp: 12, gold: [4, 8], moves: [
+    { name: '闪烁爆燃', dmg: 5, w: 3 },
+    { name: '迸溅余烬', dmg: 3, toPlayer: { poison: 2 }, w: 2 },
+    { name: '火苗护身', block: 4, w: 1 },
+  ]},
+  shard_hound:  { id: 'shard_hound', name: '星屑猎犬', art: '🐕', hp: 22, xp: 16, gold: [6, 10], moves: [
+    { name: '碎晶撕咬', dmg: 8, w: 3 },
+    { name: '连环扑咬', dmg: 4, times: 2, w: 2 },
+    { name: '竖晶吠叫', self: { strength: 1 }, w: 1 },
+  ]},
+  cinder_beast: { id: 'cinder_beast', name: '星陨兽', art: '🐗', hp: 38, xp: 30, gold: [14, 22], moves: [
+    { name: '冲撞', dmg: 11, w: 3 },
+    { name: '星尘喷吐', toPlayer: { vuln: 2 }, w: 2 },
+    { name: '躁踏', dmg: 5, times: 2, w: 2 },
+    { name: '硬化皮', block: 8, w: 1 },
+  ]},
   /* —— 古塔 —— */
   shard_wraith: { id: 'shard_wraith', name: '星屑怨影', art: '✨', hp: 24, xp: 22, gold: [10, 16], moves: [
     { name: '光刃', dmg: 7, w: 3 },
@@ -346,6 +375,13 @@ DATA.ENEMIES = {
     { name: '墙体共鸣', block: 8, self: { strength: 1 }, w: 1 },
   ]},
   /* —— 头目 —— */
+  herald: { id: 'herald', name: '影之先驱', art: '🕴️', hp: 88, xp: 70, gold: [55, 75], boss: true, moves: [
+    { name: '崩星斩', dmg: 12, w: 3 },
+    { name: '影蔓缠缚', dmg: 4, times: 2, toPlayer: { vuln: 1 }, w: 2 },
+    { name: '蚀幕', block: 10, self: { strength: 1 }, w: 2 },
+    { name: '汲取辉光', dmg: 8, heal: 10, w: 2 },
+    { name: '终焉宣告', dmg: 6, times: 3, w: 1 },
+  ]},
   worm:   { id: 'worm', name: '矿坑之王·掘地虫', art: '🪱', hp: 95, xp: 80, gold: [60, 80], boss: true, moves: [
     { name: '吞噬', dmg: 12, w: 3 },
     { name: '地震', dmg: 6, times: 2, w: 2 },
@@ -401,6 +437,13 @@ DATA.GROUPS = {
   tower_guard:    ['star_golem'],
   wall_spawns:    ['lurker', 'spider'],
   wall_thing:     ['wall_thing'],
+  /* —— 坠星裂谷 —— */
+  ember_wisps:    ['ember_wisp', 'ember_wisp'],
+  hound_pair:     ['shard_hound', 'shard_hound'],
+  rift_mix:       ['shard_hound', 'ember_wisp'],
+  cinder_beasts:  ['cinder_beast'],
+  cinder_pack:    ['cinder_beast', 'shard_hound'],
+  boss_herald:    ['herald', 'ember_wisp'],
   boss_worm:      ['worm'],
   boss_morgan:    ['morgan', 'shadow_mage'],
   endless_boss_worm:   ['worm_echo'],
@@ -411,6 +454,7 @@ DATA.GROUPS = {
 DATA.ENCOUNTERS = {
   wild: ['goblins2', 'wolf_goblin', 'shaman_wolf', 'bats', 'moth_swarm'],
   mine: ['skeletons', 'spiders', 'bats', 'skeleton_spider', 'statue', 'lurker', 'husks', 'moss_golem', 'shade_husk'],
+  rift: ['ember_wisps', 'hound_pair', 'rift_mix', 'cinder_beasts', 'lurker'],
 };
 
 /* ============================ 迷雾回廊（无尽模式） ============================
@@ -455,6 +499,11 @@ DATA.MINE_EVENTS = ['me_cart', 'me_moss', 'me_ghost', 'me_collapse', 'me_husk_hu
    与矿坑异闻同一套调度（forest_explore，flags.fe_<id>，每则一次），
    事件发生在进矿坑之前的荒野——奖励更节制，风波也更轻。 */
 DATA.FOREST_EVENTS = ['fe_trapline', 'fe_hivetree', 'fe_hut', 'fe_moths', 'fe_stone', 'fe_wolfbones'];
+
+/* ============================ 裂谷异闻（坠星残迹随机事件） ============================
+   同一套调度（rift_explore，flags.re_<id>，每则一次）。星核抉择之后、
+   古塔之前，玩家横穿星坠之夜犁出的坠星裂谷——残迹还在燃烧，时间还在打结。 */
+DATA.RIFT_EVENTS = ['re_ember', 're_frozen', 're_pillar', 're_cairns', 're_houndnest', 're_stair'];
 
 function isPrime(n) {
   if (n < 2) return false;
@@ -1069,6 +1118,10 @@ DATA.SCENES = {
         go: 'mine_entrance',
       },
       { text: '🕯️ 深入矿坑', go: 'mine_depths' },
+      {
+        text: '🌄 沿山腰的伤疤北行', subFn: (s) => s.flags.heraldDown ? '先驱溃散处，谷道直通塔下' : '星坠之夜犁出的裂谷 · 通往古塔',
+        show: (s) => !!s.flags.bossDown, go: 'rift_gate',
+      },
       { text: '🏠 返回雾隐镇', sub: '补给与休整', go: 'town' },
     ],
   },
@@ -1363,6 +1416,7 @@ DATA.SCENES = {
         s.relics = s.relics || [];
         if (!hasRelic(s, 'worm_eye')) s.relics.push('worm_eye');
         Quest.done(s, 'main_mine');
+        Quest.add(s, 'main_rift');
         Quest.add(s, 'main_tower');
         return '【获得 任务物品·星核碎片 / 遗物·王虫的独眼（行动力上限 +1，每战开始失去 3 生命）/ 大量经验】';
       }
@@ -1382,8 +1436,8 @@ DATA.SCENES = {
       {
         text: '🧘 尝试净化它', sub: '🎲 智力检定 · DC 14',
         check: { stat: 'int', dc: 14 },
-        success: { text: '你以百年前的净化咒文为引，月光为砥。黑雾如潮水般从碎片中退去——它变得澄澈，像一小片凝固的星空。', fx: { flag2: { core: 'pure' }, card: 'purify', healPct: 100 }, go: 'tower_gate' },
-        fail: { text: '黑雾顺着指尖倒灌而入！你咬碎牙关，用血肉做引、以剧痛为砥，硬生生把整片黑雾从碎片里逼了出去——碎片终究是澄澈了，只是你手臂上多了一道再也褪不掉的焦痕。（生命 -12）', fx: { hp: -12, flag2: { core: 'pure' }, card: 'purify' }, go: 'tower_gate' },
+        success: { text: '你以百年前的净化咒文为引，月光为砥。黑雾如潮水般从碎片中退去——它变得澄澈，像一小片凝固的星空。', fx: { flag2: { core: 'pure' }, card: 'purify', healPct: 100 }, go: 'rift_gate' },
+        fail: { text: '黑雾顺着指尖倒灌而入！你咬碎牙关，用血肉做引、以剧痛为砥，硬生生把整片黑雾从碎片里逼了出去——碎片终究是澄澈了，只是你手臂上多了一道再也褪不掉的焦痕。（生命 -12）', fx: { hp: -12, flag2: { core: 'pure' }, card: 'purify' }, go: 'rift_gate' },
       },
       { text: '🩸 吸收它的力量', sub: '禁忌之力', go: 'absorb_confirm' },
       { text: '🕊️ 封存碎片，交回镇上', sub: '就此归乡', go: 'peace_confirm' },
@@ -1396,7 +1450,7 @@ DATA.SCENES = {
       {
         text: '🩸 "我要亲手终结这一切。"', sub: '禁忌之力 · 并非没有代价',
         fx: { flag2: { core: 'absorb' }, card: 'shadow_rage', stat: { pow: 1 }, curse: 'core_hunger' },
-        go: 'tower_gate',
+        go: 'rift_gate',
       },
       { text: '✋ 再想想', go: 'core_choice' },
     ],
@@ -1407,6 +1461,194 @@ DATA.SCENES = {
     choices: [
       { text: '🕊️ 是的，带它回雾隐镇', go: 'ending_peace' },
       { text: '✋ 再想想', go: 'core_choice' },
+    ],
+  },
+
+  /* ============ 第四章 · 坠星裂谷 ============
+     星坠之夜，那颗星拖着火尾犁过山腰，坠进矿坑——这道深谷就是它留下的伤疤。
+     星核抉择之后、古塔之前，玩家必须横穿裂谷：残迹仍在燃烧，时间仍在打结，
+     而雾从塔的方向倒灌进来——"有人在等门开"，门前的雾派出了先遣。
+     枢纽 rift_gate 探索路线照搬矿坑一层：遭遇战 / 裂谷异闻 / 一次性休整与星鸣，
+     影之先驱（boss_herald）战败前可原路折返矿坑，战败后谷道直通塔下营地。 */
+  rift_gate: {
+    text: (s) => s.flags.heraldDown
+      ? '先驱溃散的地方，雾退成两道灰墙，让出一条笔直的谷道。远处崖下，旅人的篝火在暮色里明明灭灭——古塔到了。\n\n掌心的碎片安静得反常，像也在屏息。'
+      : '山腰被撕开一道深谷，谷底的星屑至今仍在燃烧，烟柱笔直地升进雾里。\n\n星坠之夜，那颗星就是从这里犁过，一路坠进矿坑。而雾从塔的方向倒灌进来，贴着谷底流——像被什么吸着走。\n\n掌心的碎片越来越烫。它认得这条路。',
+    choices: [
+      { text: '⚔️ 沿谷道向塔影推进', sub: '遭遇战 · 以星屑为食的东西在雾里游荡', combat: 'random:rift', win: 'rift_after' },
+      { text: '🔎 搜寻星坠残迹', sub: '裂谷异闻 · 每处机缘每次冒险只出现一次', go: 'rift_explore' },
+      {
+        text: '⭐ 聆听谷底的星鸣', sub: '🎲 智力检定 · DC 13 · 谷底的声音不太寻常', once: 'listened_rift',
+        check: { stat: 'int', dc: 13 },
+        success: { text: '你贴着谷底的岩石坐下来。起初只有风。然后——声音来了。不是从耳朵，是从骨头里升起来的：一声悠长、下坠的哀鸣，被百丈山岩滤成了低吟。\n\n星星坠落的那个夜晚，它不是在燃烧。它在被什么东西拽下来——一路尖叫着，坠进矿坑。\n\n你顺着那道"拽"的方向望去：古塔。', fx: { card: 'falling_star', note: 'star_echo', xp: 15 }, go: 'rift_gate' },
+        fail: { text: '你听了整整一个时辰。风声、滴水声、自己太阳穴的突跳——还有塔影里雾的私语。什么也没听懂，脑袋却疼得厉害。（生命 -6）', fx: { hp: -6 }, go: 'rift_gate' },
+      },
+      {
+        text: '🛖 谷口岩檐下的篝火', sub: '有人留下过整捆的干柴 · 恢复 50% 生命', once: 'rift_rest',
+        fx: { healPct: 50 }, go: 'rift_gate',
+      },
+      { text: '🕳️ 迎着塔影下行', sub: '雾在那里收拢成一道闸口', show: (s) => !s.flags.heraldDown, go: 'herald_pre' },
+      { text: '🚪 沿先驱让开的谷道前行', sub: '崖下的篝火 · 塔下营地', show: (s) => !!s.flags.heraldDown, go: 'tower_gate' },
+      { text: '↩️ 退回矿坑入口', show: (s) => !s.flags.heraldDown, go: 'mine_entrance' },
+    ],
+  },
+
+  rift_after: {
+    text: '战斗的余音在谷壁间撞了几个来回，惊起一片燃烧的星尘。\n\n塔影又近了一分。雾的流向愈发急了，贴着谷底朝古塔的方向涌。',
+    choices: [
+      { text: '↩️ 回到谷口', go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 支线 · 裂谷异闻（星坠残迹随机事件） ——
+     调度与矿坑/林间异闻一致：onEnter 计数并路由到一则未触发的残迹；
+     战斗胜后统一回 rift_after。 */
+  rift_explore: {
+    onEnter: (s) => {
+      s.stats.riftExplored = (s.stats.riftExplored || 0) + 1;
+      const pool = DATA.RIFT_EVENTS.filter((id) => !s.flags['re_' + id]);
+      if (!pool.length) return 'rift_explore_empty';
+      const id = pool[Math.floor(Math.random() * pool.length)];
+      s.flags['re_' + id] = true;
+      return id;
+    },
+    text: '你离开谷道，朝着星屑的反光处探去。',
+    choices: [],
+  },
+
+  rift_explore_empty: {
+    text: '星屑的反光都寻遍了——烧尽的已经冷透，没烧尽的烧不出新的花样。\n\n塔影把整条谷道罩进了黄昏，雾在脚边打着旋。',
+    choices: [
+      { text: '⚔️ 顺势清剿谷中游荡的东西', sub: '遭遇战', combat: 'random:rift', win: 'rift_after' },
+      { text: '↩️ 回到谷口', go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 异闻 · 燃烧的星屑 —— */
+  re_ember: {
+    text: '谷道旁的岩缝里卡着一块拳头大的星屑，落地至今仍在燃烧——没有燃料，没有火星，火焰烧着它自己，烧出一小片扭曲的热浪。\n\n靠近了能听见极轻的嗡鸣，像烧红的铁扔进水里。',
+    choices: [
+      {
+        text: '🏺 用陶罐封一撮星火', sub: '🎲 敏捷检定 · DC 12',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '你用断箭杆挑起一撮星屑，封进空陶罐。罐壁烫手，火光却透过陶土稳定地亮着——这一小撮火，够你在战斗里省出一口气。', fx: { item: 'energy_potion', xp: 10 }, go: 'rift_gate' },
+        fail: { text: '星屑在你指尖炸开细小的火星！你甩着手退开，指节上燎起一串水泡。（生命 -7）', fx: { hp: -7 }, go: 'rift_gate' },
+      },
+      { text: '🔥 绕开这块烫手的石头', sub: '无火之人不必惹火', fx: { xp: 6 }, go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 异闻 · 冻结的商队 —— */
+  re_frozen: {
+    text: '五辆货车在谷道中央首尾相撞，货物撒了一地——扬起的尘土悬在半空，驮马的鬃毛凝着奔逃的弧度。一具僵立的尸骸保持着回头的姿势，脸上凝固的不是恐惧，是一种终于迟到的了悟。\n\n星坠之夜，时间在这道谷里打了结。',
+    choices: [
+      {
+        text: '💪 撬开车斗的铜锁', sub: '🎲 力量检定 · DC 12',
+        check: { stat: 'pow', dc: 12 },
+        success: { text: '铜锁应声崩断。车斗里码着完好的布匹与锡器，夹层里还有一只油布裹紧的钱袋——货主再也用不上它们了。', fx: { gold: 55, item: 'big_potion', note: 'frozen_moment' }, go: 'rift_gate' },
+        fail: { text: '锁没开，撬棍却砸进那团悬空的尘土——尘土突然有了重量，扑了你满脸。呛咳间你摸走了几件锡器。（生命 -5）', fx: { gold: 20, hp: -5, note: 'frozen_moment' }, go: 'rift_gate' },
+      },
+      { text: '🪙 只取走死者指间的铜币', sub: '拿得心安理得一些', fx: { gold: 15, note: 'frozen_moment' }, go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 异闻 · 星纹石柱 —— */
+  re_pillar: {
+    text: '谷壁上立着半截石柱，柱身爬满与岩纹格格不入的刻痕——那是字。石柱间的缝隙里长着一簇发着微光的苔，像谁把一小片夜空研碎了抹在石头上。',
+    choices: [
+      {
+        text: '📖 拓印柱身的刻字', sub: '🎲 智力检定 · DC 11',
+        check: { stat: 'int', dc: 11 },
+        success: { text: '刻字与塔门上那行诗同出一手："雾散之处，皆是归途。"\n\n下面还有一行更小的新字："此去塔顶三百级，每百级留一盏灯。"\n\n——初代守塔人，也是从这道谷里爬上去的。', fx: { xp: 18, note: 'rift_pillar' }, go: 'rift_gate' },
+        fail: { text: '刻痕被星屑的辐射蚀得模糊，你只认出"灯"和"塔"两个古字。', fx: { xp: 6 }, go: 'rift_gate' },
+      },
+      {
+        text: '🌿 采下石缝间的星苔', sub: '🎲 敏捷检定 · DC 10',
+        check: { stat: 'agi', dc: 10 },
+        success: { text: '你用刀背整簇起下星苔。苔叶在指间凉丝丝地发亮，捣出的汁液带着雪后松林的味道——药婆见了会说这是好东西。', fx: { item: 'star_dew' }, go: 'rift_gate' },
+        fail: { text: '苔根抓得太牢，你用力过猛，指节在石棱上剐出一道血口。星苔碎成了渣。（生命 -5）', fx: { hp: -5 }, go: 'rift_gate' },
+      },
+    ],
+  },
+
+  /* —— 异闻 · 六座石冢 —— */
+  re_cairns: {
+    text: '谷道收窄处，六座石冢一字排开。每一座都用垒石压着一件外乡人的遗物：一枚战团徽记、半块法袍的残片、一支断箭……\n\n第五座之后，第六座冢是空的——只在土里插着一柄锈剑，剑柄朝外，像在等谁来拔。',
+    choices: [
+      {
+        text: '🕯️ 向石冢致意', sub: '🎲 魅力检定 · DC 11',
+        check: { stat: 'cha', dc: 11 },
+        success: { text: '你解下头盔，向六段没有走完的旅程低头。风穿过石冢，雾在冢顶打了个旋——像是还礼。\n\n你忽然明白：他们不是不知道塔里等着什么。他们是不得不去。', fx: { xp: 15, note: 'rift_cairns' }, go: 'rift_gate' },
+        fail: { text: '雾压得比刚才更低了。你对着六座石冢站了很久，什么也没等到，只站出一身寒气。（生命 -5）', fx: { hp: -5 }, go: 'rift_gate' },
+      },
+      {
+        text: '🪙 翻检石冢上的供奉', sub: '🎲 力量检定 · DC 11 · 死者的东西不好拿',
+        check: { stat: 'pow', dc: 11 },
+        success: { text: '垒石下的遗物比看上去值钱：徽记是纯银的，箭簇上镶着星髓。攫取供奉的手，指尖忽然一凉——有什么东西，记住了你。（生命 -6）', fx: { gold: 45, hp: -6 }, go: 'rift_gate' },
+        fail: { text: '垒石纹丝不动。你的手停在半空——雾里仿佛有六道目光，一齐落在你的手背上。你收回了手。', fx: { hp: -4 }, go: 'rift_gate' },
+      },
+    ],
+  },
+
+  /* —— 异闻 · 星屑兽的巢 —— */
+  re_houndnest: {
+    text: '岩凹里铺着一窝兽巢——巢里没有草，只有几百枚剔透的晶簇，每一枚都含着一点不灭的星光。巢穴深处，几枚晶蛋般的矿石堆得更密。\n\n母兽的脚印比脸盆还大，出巢的方向朝着塔。',
+    choices: [
+      {
+        text: '🤲 摸走巢心的星髓矿石', sub: '🎲 敏捷检定 · DC 13 · 出谷能换一笔大价钱',
+        check: { stat: 'agi', dc: 13 },
+        success: { text: '你屏着呼吸，把最亮的几枚星髓拢进怀里。晶簇在怀中轻轻震颤，像揣了一窝雏鸟——出谷之后，它们能换一笔让铁匠挑眉的价钱。', fx: { gold: 65 }, go: 'rift_gate' },
+        fail: { text: '你的影子先一步落进巢里。身后传来一声低沉的咆哮——母兽回来了！', combat: 'cinder_pack', win: 'rift_after' },
+      },
+      { text: '🐾 退出岩凹，别惊动它们', sub: '母兽的脚印比脸盆还大', fx: { xp: 8 }, go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 异闻 · 塌了半边的旧石阶 —— */
+  re_stair: {
+    text: '谷壁上悬着一段塌了半边的石阶，阶石规格齐整，与谷里的乱石截然不同——是有人凿出来的。阶顶的凹龛里隐约有物件的轮廓，阶下的碎石里还嵌着一只锈烂的铁环，像挂灯用的。',
+    choices: [
+      {
+        text: '🧗 攀上残阶', sub: '🎲 敏捷检定 · DC 12 · 凹龛里守着什么',
+        check: { stat: 'agi', dc: 12 },
+        success: { text: '阶石被星屑的辐射蚀得酥脆，但你踩得足够轻。凹龛里是一只风干的行囊，囊底裹着一枚铜铃——铃舌上刻着细密的防滑纹，是牧人系给头羊的那种。\n\n摇一摇，铃声清越，山道的每一块落脚石都听得见。', fx: { relic: 'goat_bell', xp: 10 }, go: 'rift_gate' },
+        fail: { text: '阶石在你脚下滑脱！你顺着谷壁滑出两丈，被一丛荆棘拦住。（生命 -8）', fx: { hp: -8 }, go: 'rift_gate' },
+      },
+      { text: '🪙 在阶下碎石里翻检', sub: '不冒险也有收获', fx: { gold: 15 }, go: 'rift_gate' },
+    ],
+  },
+
+  /* —— 迷你头目 · 影之先驱 ——
+     影魔封在塔顶，星核是锁，坠星是钥匙——按薇拉的推演，"有人在等门开"。
+     等门的东西派出了先遣，来夺你掌心这把钥匙。cha 检定成功落下
+     flags.heraldWeakened，combat.js 在开战时削弱先驱。 */
+  herald_pre: {
+    text: '塔影最浓处，雾收拢成一道闸口——所有倒灌的雾都要从这里挤进谷去。\n\n闸口中央立着一道人形。没有脸，只有轮廓，轮廓里翻涌着你在莫尔甘身上见过的那种黑雾。\n\n它朝你伸出手，掌心向上。它要的东西，就在你手里。',
+    choices: [
+      {
+        text: '💬 质问它：等门开的究竟是什么', sub: '🎲 魅力检定 · DC 13', once: 'asked_herald',
+        check: { stat: 'cha', dc: 13 },
+        success: { text: '人形的轮廓停住了一瞬。\n\n"门开后，最先被饮尽的，"它的声音像许多人叠在一起说，"是等门的人。"\n\n黑雾翻涌——它的轮廓里透出一点迟疑。它想起了自己也曾站在门外。', fx: { flag: 'heraldWeakened', xp: 10 }, combat: 'boss_herald', win: 'herald_win' },
+        fail: { text: '"钥匙。"它只说了这两个字，雾闸便向两侧竖起——它不再等了。', combat: 'boss_herald', win: 'herald_win' },
+      },
+      { text: '⚔️ 不再多言，拔剑', combat: 'boss_herald', win: 'herald_win' },
+    ],
+  },
+
+  herald_win: {
+    onEnter: (s) => {
+      if (!s.flags.heraldDown) {
+        s.flags.heraldDown = true;
+        s.relics = s.relics || [];
+        if (!hasRelic(s, 'ember_heart')) s.relics.push('ember_heart');
+        Quest.done(s, 'main_rift');
+        return '【获得 遗物·烬心炉（战斗开始时获得 4 点护甲）】';
+      }
+      return null;
+    },
+    text: '崩解前的最后一瞬，人形的轮廓里传出叠着许多人的声音：\n\n"钥匙……会自己走回门前。我们等的就是……你……"\n\n雾闸散成两道灰墙，让出一条直通山巅的谷道。先驱溃散处的余烬落进石缝，凝成一小簇不灭的炉火——雾绕着它走。',
+    choices: [
+      { text: '🚪 沿谷道直抵塔下营地', go: 'tower_gate' },
     ],
   },
 
@@ -1835,6 +2077,7 @@ DATA.SCENES = {
 /* ============================ 任务与笔记 ============================ */
 DATA.QUESTS = {
   main_mine:  { id: 'main_mine', kind: '主线', name: '调查迷雾矿坑', desc: '镇长悬赏：星坠石砸穿矿坑三层，七名矿工失踪。查明异动的源头，救回能救的人。' },
+  main_rift:  { id: 'main_rift', kind: '主线', name: '穿越坠星裂谷', desc: '星坠之夜在山腰犁出的伤疤，是矿坑与古塔之间唯一的路。雾从塔的方向倒灌进谷——有什么东西，不想让你带着钥匙走过去。' },
   main_tower: { id: 'main_tower', kind: '主线', name: '星核与古塔', desc: '星核碎片在掌中低语，古塔在北方山巅注视。带上它登上塔顶，面对守塔人莫尔甘。' },
   side_miner: { id: 'side_miner', kind: '支线', name: '巷道深处的呼救', desc: '矿坑一层传来微弱的呼救声，夹杂着窸窣的爬行声——有人还活着。' },
   side_grove: { id: 'side_grove', kind: '支线', name: '林心的异光', desc: '药婆雾葵的泉眼被一团"会说话的雾"占了。低语许诺你力量——但低语从来不安好心。让泉水重新清澈起来。' },
@@ -1861,6 +2104,10 @@ DATA.NOTES = {
   chime_lore:    { id: 'chime_lore', title: '🎐 风铃的来历', text: '聋伯说：雾隐镇建镇那年，初代守塔人亲手调了满镇的风铃——"铃声不断，雾就不进镇。"铃，是锁的一部分。可如今，铃一只接一只地哑了。' },
   forest_marks:  { id: 'forest_marks', title: '🪨 兽径的石铭', text: '岔路口的苔石路标是初代守塔人所刻，为旅人指路。铭文末尾写着："雾散之处，皆是归途。"——塔门上那行诗，原来一百多年前就刻在这里了。' },
   veras_prophecy:{ id: 'veras_prophecy', title: '🔭 占星师的推演', text: '薇拉拨动星盘："星核是锁，那颗星是钥匙。可锁住的东西，为什么要引钥匙进来？钥匙落进了矿坑，锁还挂在塔顶——有人在等门开。"' },
+  star_echo:     { id: 'star_echo', title: '⭐ 谷底的星鸣', text: '星星坠落的那个夜晚，它不是在燃烧——它在被什么东西拽下来，一路尖叫着坠进矿坑。顺着那道"拽"的方向望去，是古塔。这一式坠星击，是那声哀鸣教给你的。' },
+  rift_pillar:   { id: 'rift_pillar', title: '🪨 裂谷石柱', text: '坠星裂谷的石柱刻字与塔门同出一手："雾散之处，皆是归途。"下面还有一行小字："此去塔顶三百级，每百级留一盏灯。"——初代守塔人，也是从这道谷里爬上去的。' },
+  rift_cairns:   { id: 'rift_cairns', title: '🪦 六座石冢', text: '裂谷收窄处的六座石冢，各压着一件外乡人的遗物；第六座是空的，只插着一柄剑柄朝外的锈剑。他们不是不知道塔里等着什么——他们是不得不去。' },
+  frozen_moment: { id: 'frozen_moment', title: '⏱️ 打结的时间', text: '冻结在谷中的商队还保持着奔逃的姿势。星坠之夜，时间在裂谷里打了结——怀表在这里走得格外慢，别问是谁在拨慢它。' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */
@@ -1905,6 +2152,9 @@ DATA.OMENS = [
 DATA.ACHIEVEMENTS = {
   first_win:     { id: 'first_win', icon: '⚔️', name: '初战告捷', desc: '首次战斗胜利。', test: (s) => s.stats.battles >= 1 },
   worm_slain:    { id: 'worm_slain', icon: '🪱', name: '矿坑之王', desc: '击败矿坑之王·掘地虫。', test: (s) => s.flags.bossDown },
+  herald_slain:  { id: 'herald_slain', icon: '🕴️', name: '门前的先驱', desc: '击败影之先驱，横穿坠星裂谷。', test: (s) => s.flags.heraldDown },
+  rift_explore5: { id: 'rift_explore5', icon: '🔎', name: '星痕采集者', desc: '在坠星裂谷搜寻残迹，触发 5 则裂谷异闻。', test: (s) => (s.stats.riftExplored || 0) >= 5 },
+  rift_all:      { id: 'rift_all', icon: '🕯️', name: '坠星的注脚', desc: '探遍坠星裂谷的全部 ' + DATA.RIFT_EVENTS.length + ' 则异闻。', test: (s) => DATA.RIFT_EVENTS.every((id) => s.flags['re_' + id]) },
   wall_slain:    { id: 'wall_slain', icon: '🫀', name: '墙中的心跳', desc: '击败第七巷的墙中之物。', test: (s) => s.flags.wallDone },
   wisp_pure:     { id: 'wisp_pure', icon: '💠', name: '重澈的泉眼', desc: '净化林心泉眼，完成「林心的异光」。', test: (s) => s.flags.springDone },
   miner_saved:   { id: 'miner_saved', icon: '⛑️', name: '生命的重量', desc: '救出被困矿工托马斯。', test: (s) => s.flags.minerSaved },

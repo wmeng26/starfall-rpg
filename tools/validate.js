@@ -220,6 +220,10 @@ for (const id of (DATA.FOREST_EVENTS || [])) {
   if (!SCENES[id]) err('FOREST_EVENTS 未知异闻场景: ' + id);
 }
 if (DATA.FOREST_EVENTS && DATA.FOREST_EVENTS.length && !SCENES.forest_explore) err('缺少林间异闻调度场景 forest_explore');
+for (const id of (DATA.RIFT_EVENTS || [])) {
+  if (!SCENES[id]) err('RIFT_EVENTS 未知异闻场景: ' + id);
+}
+if (DATA.RIFT_EVENTS && DATA.RIFT_EVENTS.length && !SCENES.rift_explore) err('缺少裂谷异闻调度场景 rift_explore');
 /* 升级祝福：结构完整、效果字段合法、id 唯一 */
 {
   const BLESS_FX = ['maxHp', 'gold', 'hp', 'healPct', 'hpPct', 'item', 'card', 'gear', 'flag', 'flag2', 'stat', 'xp'];
@@ -387,6 +391,22 @@ if (routedF.size !== DATA.FOREST_EVENTS.length) err('林间异闻调度未覆盖
 if (DATA.SCENES.forest_explore.onEnter(stfe) !== 'forest_explore_empty') err('六则异闻触发后应落入 forest_explore_empty');
 if (stfe.stats.forestExplored !== DATA.FOREST_EVENTS.length + 1) err('林间探索计数错误: ' + stfe.stats.forestExplored);
 console.log('  ✓ 林间异闻 调度路由 · 每则一次 · 探索计数 通过');
+
+/* 裂谷异闻：调度路由 / 每则一次 / 探索计数 / 探空回落 */
+const stre = sandbox.newGameState('warrior');
+const routedR = new Set();
+for (let i = 0; i < DATA.RIFT_EVENTS.length; i++) {
+  const dest = DATA.SCENES.rift_explore.onEnter(stre);
+  if (!DATA.RIFT_EVENTS.includes(dest)) err('裂谷异闻调度路由到未知场景: ' + dest);
+  routedR.add(dest);
+}
+if (routedR.size !== DATA.RIFT_EVENTS.length) err('裂谷异闻调度未覆盖全部事件: ' + JSON.stringify(Array.from(routedR)));
+if (DATA.SCENES.rift_explore.onEnter(stre) !== 'rift_explore_empty') err('六则异闻触发后应落入 rift_explore_empty');
+if (stre.stats.riftExplored !== DATA.RIFT_EVENTS.length + 1) err('裂谷探索计数错误: ' + stre.stats.riftExplored);
+/* 成就 test：先驱击败 / 异闻计数 / 全收集（在含 DATA 的沙盒里可执行） */
+if (typeof sandbox.DATA.ACHIEVEMENTS.rift_all.test({ flags: {} }) !== 'boolean') err('成就 rift_all test 未返回布尔值');
+if (!sandbox.DATA.ACHIEVEMENTS.rift_all.test(Object.assign(sandbox.newGameState('warrior'), (function () { const f = {}; DATA.RIFT_EVENTS.forEach((id) => f['re_' + id] = true); return { flags: f }; })()))) err('成就 rift_all 在六则全触发时应达成');
+console.log('  ✓ 裂谷异闻 调度路由 · 每则一次 · 探索计数 通过');
 
 /* ---------- 4. 战斗/死亡引擎冒烟（无 DOM 沙盒） ---------- */
 const readJs = (f) => fs.readFileSync(path.join(ROOT, 'js', f), 'utf8');

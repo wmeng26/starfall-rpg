@@ -117,6 +117,16 @@ const Combat = {
         }
       }
     }
+    /* 先驱的迟疑：被质问动摇的影之先驱（herald_pre 检定成功落旗） */
+    if (G.state.flags.heraldWeakened) {
+      for (const e of enemies) {
+        if (e.base === 'herald') {
+          e.hp = Math.max(1, e.hp - 15);
+          e.maxHp = e.hp + 15;
+          e.statuses.vuln = 2;
+        }
+      }
+    }
 
     this.startPlayerTurn(true);
   },
