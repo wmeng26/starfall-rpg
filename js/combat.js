@@ -59,6 +59,26 @@ const Combat = {
     }
 
     const R = relicSum(G.state);
+    /* 星兆：观星问卜得来的战役加护，逐场消耗。
+       同名效果字段与遗物一致，此处聚合成本场的加护总量（om），各钩子分别结算。 */
+    const omens = [];
+    if (G.state.flags && Array.isArray(G.state.flags.omenList)) {
+      for (const o of G.state.flags.omenList) {
+        if (!o || !(o.battles > 0)) continue;
+        o.battles -= 1;
+        omens.push(o);
+      }
+      if (omens.length) {
+        G.state.flags.omenList = G.state.flags.omenList.filter((o) => o && o.battles > 0);
+        Save.write(G.state);
+      }
+    }
+    const om = {};
+    for (const o of omens) {
+      for (const k of ['startBlock', 'startStrength', 'enemyVuln', 'enemyWeak', 'energyFirst', 'startLossHp', 'goldPct', 'xpPct']) {
+        if (o[k]) om[k] = (om[k] || 0) + o[k];
+      }
+    }
     /* 祝福·涌泉：本局每次升级祝福择取的行动力上限加成（每局一次） */
     const eb = (G.state.flags && G.state.flags.energyBonus) ? 1 : 0;
     this.C = {
@@ -69,6 +89,7 @@ const Combat = {
       busy: true, over: false,
       selected: -1, targetingItem: null,
       relic: R,
+      omen: om,
       scale: es,
       winScene: winScene || 'town',
       rewards: null,
@@ -113,6 +134,7 @@ const Combat = {
     C.player.block = 0;
     C.energy = C.maxEnergy;
     const R = C.relic || {};
+    const om = C.omen || {};
 
     /* 遗物：每回合开始回复（药婆的草香囊） */
     if (R.turnHeal && p.hp > 0 && p.hp < p.maxHp) {
@@ -146,6 +168,30 @@ const Combat = {
           if (e.hp > 0) this.addStatus(e, { weak: R.enemyWeak });
         }
         UI.log('💧 雾露沾襟：所有敌人获得 ' + R.enemyWeak + ' 层虚弱', 'gain');
+      }
+      /* 星兆：战斗首回合的一次性加护 */
+      if (om.energyFirst) C.energy += om.energyFirst;
+      if (om.startLossHp) {
+        p.hp = Math.max(0, p.hp - om.startLossHp);
+        UI.float($('#p-avatar'), '-' + om.startLossHp, 'dmg');
+        UI.log('🩸 星兆【血星低照】索取了 ' + om.startLossHp + ' 点生命', 'battle');
+      }
+      if (om.startBlock) {
+        C.player.block += om.startBlock;
+        UI.log('🔭 星兆加护：获得 ' + om.startBlock + ' 点护甲', 'gain');
+      }
+      if (om.startStrength) this.addStatus(C.player, { strength: om.startStrength });
+      if (om.enemyVuln) {
+        for (const e of C.enemies) {
+          if (e.hp > 0) this.addStatus(e, { vuln: om.enemyVuln });
+        }
+        UI.log('🔭 星兆蚀芒：所有敌人获得 ' + om.enemyVuln + ' 层易伤', 'gain');
+      }
+      if (om.enemyWeak) {
+        for (const e of C.enemies) {
+          if (e.hp > 0) this.addStatus(e, { weak: om.enemyWeak });
+        }
+        UI.log('🔭 星兆凝露：所有敌人获得 ' + om.enemyWeak + ' 层虚弱', 'gain');
       }
       if (p.hp <= 0) { this.renderAll(); this.lose(); return; }
     }
@@ -260,6 +306,10 @@ const Combat = {
       let base = fx.dmg + gb.atk;
       if (fx.special === 'execute' && target) {
         base = (target.hp / target.maxHp < 0.4) ? 22 + gb.atk : 9 + gb.atk;
+      }
+      /* 圣裁：目标生命不高于一半时伤害翻倍 */
+      if (fx.special === 'smite' && target) {
+        base = (target.hp / target.maxHp <= 0.5) ? fx.dmg * 2 + gb.atk : fx.dmg + gb.atk;
       }
       const times = fx.times || 1;
       for (let i = 0; i < times; i++) {
@@ -590,6 +640,16 @@ const Combat = {
     if (R.xpPct) {
       xp = Math.round(xp * (1 + R.xpPct / 100));
       UI.log('🗺️ 遗物：经验 +25%', 'gain');
+    }
+    /* 星兆：财星照命 / 智星澄明（含血星低照的经验代价与加赏） */
+    const om = C.omen || {};
+    if (om.goldPct) {
+      gold = Math.round(gold * (1 + om.goldPct / 100));
+      UI.log('🔭 星兆【财星照命】：金币 +' + om.goldPct + '%', 'gain');
+    }
+    if (om.xpPct) {
+      xp = Math.round(xp * (1 + om.xpPct / 100));
+      UI.log('🔭 星兆加护：经验 +' + om.xpPct + '%', 'gain');
     }
     G.state.player.gold += gold;
     gainXp(G.state, xp);

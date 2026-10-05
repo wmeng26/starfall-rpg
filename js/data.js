@@ -31,6 +31,14 @@ DATA.CLASSES = {
     gear: { weapon: 'short_bow', armor: null },
     deck: ['aim_shot', 'aim_shot', 'aim_shot', 'aim_shot', 'aim_shot', 'defend', 'defend', 'defend', 'double_shot', 'dead_mark'],
   },
+  priest: {
+    id: 'priest', name: '星祭司', art: '🔯',
+    desc: '观摩星轨的游方祭司。精通祝愈与星火，擅用咒言削弱敌手。',
+    maxHp: 68,
+    stats: { pow: 1, agi: 1, int: 3, cha: 3 },
+    gear: { weapon: 'oak_staff', armor: null },
+    deck: ['star_bolt', 'star_bolt', 'star_bolt', 'star_bolt', 'halo', 'halo', 'halo', 'star_mend', 'star_mend', 'prayer', 'star_blade'],
+  },
 };
 
 /* ============================ 卡牌 ============================
@@ -91,6 +99,26 @@ DATA.CARDS = {
   herbal_shot:  { id: 'herbal_shot', name: '药箭', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'enemy', fx: { dmg: 4, heal: 4 }, desc: '造成 4 点伤害，恢复 4 点生命。' },
   scatter_shot: { id: 'scatter_shot', name: '散射', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'all', fx: { dmgAll: 4 }, desc: '对所有敌人造成 4 点伤害。' },
 
+  /* —— 星祭司 ——
+     祝愈与星光的职业：输出稍逊，胜在续航、削弱与检定友好（智力/魅力）。
+     圣裁使用 special 'smite'：目标生命 ≤50% 时伤害翻倍（见 combat.js）。 */
+  star_bolt:       { id: 'star_bolt', name: '星火弹', cost: 1, type: 'attack', cls: 'priest', rarity: 'starter', target: 'enemy', fx: { dmg: 5 }, desc: '引一缕星光掷出，造成 5 点伤害。' },
+  halo:            { id: 'halo', name: '星辉庇护', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { block: 5 }, desc: '获得 5 点护甲。' },
+  star_mend:       { id: 'star_mend', name: '星愈术', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { heal: 6 }, desc: '星光敷上伤口，恢复 6 点生命。' },
+  prayer:          { id: 'prayer', name: '祈祷', cost: 0, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { draw: 1 }, desc: '低声祷言，抽 1 张牌。' },
+  star_blade:      { id: 'star_blade', name: '星刃', cost: 1, type: 'attack', cls: 'priest', rarity: 'starter', target: 'enemy', fx: { dmg: 4, statusEnemy: { weak: 1 } }, desc: '造成 4 点伤害，给予 1 层虚弱。' },
+  bless_blade:     { id: 'bless_blade', name: '祝圣之刃', cost: 1, type: 'attack', cls: 'priest', rarity: 'common', target: 'enemy', fx: { dmg: 5, block: 3 }, desc: '造成 5 点伤害，获得 3 点护甲。' },
+  star_shackle:    { id: 'star_shackle', name: '星缚', cost: 1, type: 'attack', cls: 'priest', rarity: 'common', target: 'enemy', fx: { dmg: 2, statusEnemy: { weak: 1, vuln: 1 } }, desc: '星链缚住敌手：造成 2 点伤害，给予 1 层虚弱与 1 层易伤。' },
+  light_lance:     { id: 'light_lance', name: '光辉长枪', cost: 2, type: 'attack', cls: 'priest', rarity: 'common', target: 'enemy', fx: { dmg: 12 }, desc: '凝聚光为长枪，造成 12 点伤害。' },
+  celestial_choir: { id: 'celestial_choir', name: '群星颂歌', cost: 2, type: 'skill', cls: 'priest', rarity: 'common', target: 'self', fx: { heal: 10 }, desc:'群星同声吟唱，恢复 10 点生命。' },
+  halo_guard:      { id: 'halo_guard', name: '光帐', cost: 2, type: 'skill', cls: 'priest', rarity: 'common', target: 'self', fx: { block: 10, draw: 1 }, desc: '撑起一片光织的帐幕：获得 10 点护甲，抽 1 张牌。' },
+  judgement:       { id: 'judgement', name: '圣裁', cost: 2, type: 'attack', cls: 'priest', rarity: 'rare', target: 'enemy', fx: { dmg: 9, special: 'smite' }, desc: '目标生命不高于 50% 时造成 18 点伤害，否则 9 点。' },
+  sanctuary:       { id: 'sanctuary', name: '圣所', cost: 2, type: 'skill', cls: 'priest', rarity: 'rare', target: 'self', fx: { block: 12, cleanse: true }, desc: '在心中筑起圣所：获得 12 点护甲，清除自身负面状态。' },
+  nova_hymn:       { id: 'nova_hymn', name: '圣辉新星', cost: 3, type: 'attack', cls: 'priest', rarity: 'rare', target: 'all', fx: { dmgAll: 9, heal: 6 }, desc: '星光轰然绽放：对所有敌人造成 9 点伤害，恢复 6 点生命。' },
+
+  /* —— 中立（续） —— */
+  star_reading:    { id: 'star_reading', name: '星图解读', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { draw: 2 }, desc: '读星轨而知进退，抽 2 张牌。观星屋有售。' },
+
   /* —— 中立 —— */
   first_aid:      { id: 'first_aid', name: '急救', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 9 }, desc: '恢复 9 点生命。' },
   second_wind:    { id: 'second_wind', name: '回气', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 5, draw: 1 }, desc: '调整呼吸，恢复 5 点生命，抽 1 张牌。' },
@@ -133,6 +161,10 @@ DATA.CARDS = {
   scatter_shot_up:  { id: 'scatter_shot_up', name: '散射+', up: true, base: 'scatter_shot', cost: 1, type: 'attack', cls: 'ranger', rarity: 'common', target: 'all', fx: { dmgAll: 6 }, desc: '淬炼：对所有敌人造成 6 点伤害。' },
   second_wind_up:   { id: 'second_wind_up', name: '回气+', up: true, base: 'second_wind', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { heal: 8, draw: 1 }, desc: '淬炼：恢复 8 点生命，抽 1 张牌。' },
   starlight_up:     { id: 'starlight_up', name: '微光+', up: true, base: 'starlight', cost: 1, type: 'skill', cls: null, rarity: 'common', target: 'self', fx: { block: 6, cleanse: true }, desc: '淬炼：清除自身负面状态，获得 6 点护甲。' },
+  star_bolt_up:     { id: 'star_bolt_up', name: '星火弹+', up: true, base: 'star_bolt', cost: 1, type: 'attack', cls: 'priest', rarity: 'starter', target: 'enemy', fx: { dmg: 9 }, desc: '淬炼：造成 9 点伤害。' },
+  halo_up:          { id: 'halo_up', name: '星辉庇护+', up: true, base: 'halo', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { block: 8 }, desc: '淬炼：获得 8 点护甲。' },
+  star_mend_up:     { id: 'star_mend_up', name: '星愈术+', up: true, base: 'star_mend', cost: 1, type: 'skill', cls: 'priest', rarity: 'starter', target: 'self', fx: { heal: 10 }, desc: '淬炼：恢复 10 点生命。' },
+  star_blade_up:    { id: 'star_blade_up', name: '星刃+', up: true, base: 'star_blade', cost: 1, type: 'attack', cls: 'priest', rarity: 'starter', target: 'enemy', fx: { dmg: 6, statusEnemy: { weak: 2 } }, desc: '淬炼：造成 6 点伤害，给予 2 层虚弱。' },
 
   /* —— 诅咒 ——
      无法打出，只会占据抽牌位；drain:N = 回合结束时仍在手中则失去 N 点生命。
@@ -203,6 +235,7 @@ DATA.RELICS = {
   echo_crystal:   { id: 'echo_crystal', name: '回响晶簇', icon: '💠', turnDraw: 1, desc: '每个回合多抽 1 张牌。敲一敲它，它会用一拍之后的余音回答。' },
   dew_ring:       { id: 'dew_ring', name: '雾露指环', icon: '💧', enemyWeak: 1, desc: '战斗开始时，所有敌人获得 1 层虚弱。雾凝成的指环——戴上它，连敌手的动作都慢了半拍。' },
   rusted_goad:    { id: 'rusted_goad', name: '锈刺赶棒', icon: '🔩', vulnPlus: 1, desc: '你施加的易伤额外 +1 层。棒上的倒刺早就锈死了，可兽还记得疼。' },
+  meteor_charm:   { id: 'meteor_charm', name: '陨铁护符', icon: '🪬', startStrength: 1, startBlock: 3, desc: '战斗开始时获得 1 层力量与 3 点护甲。观星屋有售——那块星坠之夜落进后山的铁，摸上去总是温的。' },
 };
 
 /* ============================ 敌人 ============================
@@ -519,6 +552,7 @@ DATA.SCENES = {
       { text: '⚔️ 战士', sub: '生命厚实，正面拼杀。初始: 铁壁重斩之术', special: 'class', cls: 'warrior' },
       { text: '🔮 法师', sub: '脆弱但爆发惊人。初始: 元素法术奥义', special: 'class', cls: 'mage' },
       { text: '🏹 游侠', sub: '灵活多变，箭无虚发。初始: 猎手射击弓术', special: 'class', cls: 'ranger' },
+      { text: '🔯 星祭司', sub: '祝愈与星光，咒言削弱敌手。初始: 星火与祷言', special: 'class', cls: 'priest' },
     ],
   },
 
@@ -570,6 +604,7 @@ DATA.SCENES = {
       { text: '⚒️ 铁匠铺', sub: '购买装备与补给', go: 'smith' },
       { text: '🍺 雾语酒馆', sub: '打探消息', go: 'tavern' },
       { text: '🎐 铃语斋', sub: '风铃匠的铺子', go: 'chimes' },
+      { text: '🔭 观星屋', sub: '占星师薇拉的窄塔', go: 'stargazer' },
       { text: '🏛️ 镇长府', sub: '拜见镇长艾德温', go: 'elder' },
       {
         text: '🛏️ 客栈歇脚', sub: '花费 10 金币，恢复全部生命',
@@ -661,6 +696,33 @@ DATA.SCENES = {
         disabled: (s) => s.deck.length <= 6,
         subFn: (s) => s.deck.length <= 6 ? '牌组至少保留 6 张' : null,
         go: 'chimes',
+      },
+      { text: '↩️ 回到镇中心', go: 'town' },
+    ],
+  },
+
+  /* —— 观星屋：占星师薇拉 ——
+     星兆系统：问卜（special 'read_stars'，30 金币）随机获得一道 DATA.OMENS
+     中的星兆，随存档持久，逐场战斗消耗（见 combat.js / 角色面板「星兆」栏）。 */
+  stargazer: {
+    text: (s) => s.flags.inStargazer
+      ? '"星轨不骗人，骗人的是读它的人。"薇拉头也不回，指尖仍悬在星灯上方。\n\n"要再问一卦，还是要看看货？"'
+      : '镇子东头立着一座歪斜的窄塔，塔身钉着一架褪色的铜制星盘，几只哑掉的风铃挂在檐角。\n\n占星师薇拉坐在塔口的阴影里，指尖悬在一盏星灯上方——灯焰随着她的手势，朝星盘的某一颗刻星轻轻偏了偏。\n\n"星坠之后，星轨全乱了。"她说，"但乱有乱的读法。要试试吗，外乡人？"',
+    onEnter: (s) => { s.flags.inStargazer = true; return null; },
+    choices: [
+      {
+        text: '🔭 观星问卜 —— 30 金币',
+        sub: '群星今晚的低语 · 随机一道星兆，加护接下来的数场战斗',
+        special: 'read_stars', requireGold: 30,
+        go: 'stargazer',
+      },
+      { text: '🪬 陨铁护符 —— 130 金币', sub: '遗物 · 战斗开始时获得 1 层力量与 3 点护甲', fx: { gold: -130, relic: 'meteor_charm' }, requireGold: 130, show: (s) => !hasRelic(s, 'meteor_charm'), go: 'stargazer' },
+      { text: '🂠 卡牌【星图解读】—— 85 金币', sub: '加入牌组：1 费 · 抽 2 张牌', fx: { gold: -85, card: 'star_reading' }, requireGold: 85, once: 'bought_star_reading', go: 'stargazer' },
+      {
+        text: '❓ 请薇拉推演星坠之夜', sub: '🎲 智力检定 · DC 12', once: 'asked_vera',
+        check: { stat: 'int', dc: 12 },
+        success: { text: '薇拉拨动星盘，铜环层层转动，最后停在一道深深的刻痕上。\n\n"星核是锁，那颗星是钥匙。可你想过没有——锁住的东西，为什么要引钥匙进来？"她吹熄星灯，"钥匙落进了矿坑。锁，还挂在塔顶。有人在等门开。"', fx: { xp: 15, note: 'veras_prophecy' }, go: 'stargazer' },
+        fail: { text: '星盘的铜环在你指下卡死了。薇拉按住你的手："心不静的人，读不出乱的星轨。改日再来吧。"', go: 'stargazer' },
       },
       { text: '↩️ 回到镇中心', go: 'town' },
     ],
@@ -1798,10 +1860,11 @@ DATA.NOTES = {
   sixth_fate:    { id: 'sixth_fate', title: '📜 第六人的去向', text: '第七巷深处的裂缝旁，第六人的行囊叠得整整齐齐。前五个人被墙吃了；第六人放下了剑，自己走了进去。托马斯说"别信它说的话"——可有人信了。' },
   chime_lore:    { id: 'chime_lore', title: '🎐 风铃的来历', text: '聋伯说：雾隐镇建镇那年，初代守塔人亲手调了满镇的风铃——"铃声不断，雾就不进镇。"铃，是锁的一部分。可如今，铃一只接一只地哑了。' },
   forest_marks:  { id: 'forest_marks', title: '🪨 兽径的石铭', text: '岔路口的苔石路标是初代守塔人所刻，为旅人指路。铭文末尾写着："雾散之处，皆是归途。"——塔门上那行诗，原来一百多年前就刻在这里了。' },
+  veras_prophecy:{ id: 'veras_prophecy', title: '🔭 占星师的推演', text: '薇拉拨动星盘："星核是锁，那颗星是钥匙。可锁住的东西，为什么要引钥匙进来？钥匙落进了矿坑，锁还挂在塔顶——有人在等门开。"' },
 };
 
 /* 高阶卡牌（旅人出售，按职业） */
-DATA.CLASS_CARDS = { warrior: 'battle_rage', mage: 'flamestorm', ranger: 'piercing_arrow' };
+DATA.CLASS_CARDS = { warrior: 'battle_rage', mage: 'flamestorm', ranger: 'piercing_arrow', priest: 'judgement' };
 
 /* ============================ 升级祝福 ============================
    每次升级（gainXp）攒下一道待择祝福；下一次场景跳转被 Story 拦截到
@@ -1818,6 +1881,21 @@ DATA.BLESSINGS = [
   { id: 'bless_heal',   icon: '💚', name: '安眠', desc: '完全恢复生命', fx: { healPct: 100 } },
   { id: 'bless_gold',   icon: '💰', name: '横财', desc: '获得 80 金币', fx: { gold: 80 } },
   { id: 'bless_card',   icon: '🂠', name: '顿悟', desc: '获得一张随机卡牌（普通/稀有）' },
+];
+
+/* ============================ 星兆（观星屋 · 战役加护） ============================
+   在观星屋「🔭 观星问卜」（30 金币）后随机获得一道星兆：
+   存入 flags.omenList（随存档持久），每开始一场战斗消耗一场次数，
+   效果字段与遗物同名（战斗开始 / 金币经验加成），由 combat.js 的钩子结算。
+   w 为问卜时的抽中权重；icon 仅用于展示，不写入获得的星兆实例。 */
+DATA.OMENS = [
+  { id: 'omen_war',   icon: '⚔️', name: '战星高照', desc: '战斗开始时获得 2 层力量', battles: 2, w: 3, startStrength: 2 },
+  { id: 'omen_ward',  icon: '🛡️', name: '岁星拱卫', desc: '战斗开始时获得 6 点护甲', battles: 2, w: 3, startBlock: 6 },
+  { id: 'omen_fog',   icon: '🌫️', name: '晦星蚀芒', desc: '战斗开始时所有敌人获得 1 层易伤', battles: 2, w: 3, enemyVuln: 1 },
+  { id: 'omen_star',  icon: '💫', name: '流星驻足', desc: '每场战斗的首回合 +1 行动力', battles: 2, w: 2, energyFirst: 1 },
+  { id: 'omen_gold',  icon: '💰', name: '财星照命', desc: '战斗获得的金币 +40%', battles: 3, w: 2, goldPct: 40 },
+  { id: 'omen_xp',    icon: '📖', name: '智星澄明', desc: '战斗获得的经验 +40%', battles: 3, w: 2, xpPct: 40 },
+  { id: 'omen_blood', icon: '🩸', name: '血星低照', desc: '战斗开始时失去 4 点生命，战斗获得的经验 +50%', battles: 3, w: 1, startLossHp: 4, xpPct: 50 },
 ];
 
 /* ============================ 成就 ============================
@@ -1861,4 +1939,6 @@ DATA.ACHIEVEMENTS = {
   endless_15:    { id: 'endless_15', icon: '♾️', name: '雾渊之主', desc: '在迷雾回廊破开 15 重雾墙。', test: () => Endless.best() >= 15 },
   door_10:       { id: 'door_10', icon: '🚪', name: '叩门者', desc: '在迷雾回廊穿过 10 扇雾中侧门。', test: () => Endless.doors() >= 10 },
   ev_all:        { id: 'ev_all', icon: '👁️', name: '异变全识', desc: '在迷雾回廊遭遇过全部 6 种异变。', test: () => Endless.events().length >= DATA.ENDLESS_EVENTS.length },
+  star_priest:   { id: 'star_priest', icon: '🔯', name: '新星初升', desc: '以星祭司击败任意一位头目。', test: (s) => s.player.cls === 'priest' && (s.flags.bossDown || s.flags.wallDone || s.flags.golemLoot) },
+  omen_3:        { id: 'omen_3', icon: '🔭', name: '观星常客', desc: '累计观星问卜 3 次。', test: (s) => (s.stats.starsRead || 0) >= 3 },
 };

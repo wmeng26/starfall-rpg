@@ -200,7 +200,7 @@ for (const sid of sceneIds) {
       checkFx(sid, b.fx, '分支');
     }
     checkFx(sid, ch.fx, '');
-    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'upgrade_card', 'purify_curse', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass', 'bless_pick'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
+    if (ch.special && !['class', 'to_title', 'set_diff', 'forget_card', 'upgrade_card', 'purify_curse', 'read_stars', 'endless_fight', 'endless_relic', 'endless_rest', 'endless_door', 'endless_pass', 'bless_pick'].includes(ch.special)) err('场景 ' + sid + ' special 未知: ' + ch.special);
     if (ch.special === 'class' && ch.cls && !CLASSES[ch.cls]) err('场景 ' + sid + ' 未知职业: ' + ch.cls);
     if (ch.special === 'set_diff' && ch.diff !== 0 && ch.diff !== 1) err('场景 ' + sid + ' set_diff 难度非法: ' + ch.diff);
   }
@@ -231,6 +231,26 @@ if (DATA.FOREST_EVENTS && DATA.FOREST_EVENTS.length && !SCENES.forest_explore) e
     const isCard = b.id === 'bless_card', isEnergy = b.id === 'bless_energy';
     if (!isCard && !isEnergy && !b.fx) err('祝福 ' + b.id + ' 缺少 fx');
     if (b.fx) for (const k in b.fx) if (!BLESS_FX.includes(k)) err('祝福 ' + b.id + ' 未知 fx 字段: ' + k);
+  }
+}
+
+/* 星兆：结构完整、效果字段合法（与遗物同名字段，由 combat.js 钩子结算）、id 唯一、有权重 */
+{
+  const OMEN_FX = ['startBlock', 'startStrength', 'enemyVuln', 'enemyWeak', 'energyFirst', 'startLossHp', 'goldPct', 'xpPct'];
+  const omenIds = new Set();
+  for (const o of (DATA.OMENS || [])) {
+    if (!o.id || !o.name || !o.desc) { err('星兆缺字段: ' + (o.id || JSON.stringify(o)).slice(0, 30)); continue; }
+    if (omenIds.has(o.id)) err('星兆 id 重复: ' + o.id);
+    omenIds.add(o.id);
+    if (!(typeof o.battles === 'number' && o.battles >= 1)) err('星兆 ' + o.id + ' battles 非法');
+    if (!(typeof o.w === 'number' && o.w >= 1)) err('星兆 ' + o.id + ' 权重 w 非法');
+    let fxCount = 0;
+    for (const k in o) {
+      if (['id', 'name', 'desc', 'icon', 'battles', 'w'].includes(k)) continue;
+      if (!OMEN_FX.includes(k)) err('星兆 ' + o.id + ' 未知效果字段: ' + k);
+      else fxCount++;
+    }
+    if (!fxCount) err('星兆 ' + o.id + ' 没有任何效果');
   }
 }
 

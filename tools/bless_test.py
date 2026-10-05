@@ -165,7 +165,7 @@ with sync_playwright() as p:
     goto_scene(page, 'ending_peace')
     check(ev(page, 'G.state.scene') == 'ending_peace', '结局场景不被祝福拦截')
 
-    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 36, '成就总数 36')
+    check(ev(page, 'Object.keys(DATA.ACHIEVEMENTS).length') == 38, '成就总数 38')
 
     browser.close()
 

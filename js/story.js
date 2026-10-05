@@ -214,6 +214,32 @@ const Story = {
       UI.deckModal('purify');
       return;
     }
+    /* 观星问卜：观星屋掷权重随机授予一道星兆（DATA.OMENS），
+       星兆实例存入 flags.omenList 随存档持久，每场战斗消耗一次（结算见 combat.js） */
+    if (ch.special === 'read_stars') {
+      const cost = ch.requireGold || 30;
+      if (s.player.gold < cost) { UI.toast('金币不足', 'bad'); return; }
+      let total = 0;
+      for (const o of DATA.OMENS) total += (o.w || 1);
+      let roll = Math.random() * total;
+      let omen = DATA.OMENS[DATA.OMENS.length - 1];
+      for (const o of DATA.OMENS) { roll -= (o.w || 1); if (roll <= 0) { omen = o; break; } }
+      s.player.gold -= cost;
+      const inst = Object.assign({}, omen);
+      delete inst.w; delete inst.icon;
+      s.flags.omenList = (s.flags.omenList || []).filter((o) => o && o.battles > 0);
+      s.flags.omenList.push(inst);
+      s.stats.starsRead = (s.stats.starsRead || 0) + 1;
+      UI.log('🔭 观星问卜（' + cost + ' 金币）：星兆【' + omen.name + '】—— ' + omen.desc + '（接下来 ' + omen.battles + ' 场战斗）', 'gain');
+      UI.toast('🔭 星兆：' + omen.name, 'good');
+      Sfx.play('levelup');
+      Achieve.check(s);
+      Save.write(s);
+      UI.renderChar();
+      UI.renderHud();
+      this.goto('stargazer');
+      return;
+    }
     if (ch.special === 'to_title') {
       Main.showTitle();
       return;

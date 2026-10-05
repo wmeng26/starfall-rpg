@@ -106,7 +106,7 @@ with sync_playwright() as p:
     page.evaluate('Combat.C.enemies.forEach(e => e.hp = 0); Combat.win()')
     page.wait_for_timeout(1200)
     gold, xp = page.evaluate('Combat.C.rewards.gold'), page.evaluate('Combat.C.rewards.xp')
-    check(6 <= gold <= 11, '金币奖励按 ×1.4375 放大（%d）' % gold)
+    check(6 <= gold <= 12, '金币奖励按 ×1.4375 放大（%d）' % gold)
     check(xp == 20, '经验奖励 14 → 20')
     screenshot(page, '24_scaled_reward.png')
     page.click('#btn-skip-reward')

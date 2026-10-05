@@ -203,6 +203,15 @@ const UI = {
         '<div class="relic-desc">' + rd.desc + '</div></div>';
     }
 
+    let omenRows = '';
+    const omenList = (s.flags && Array.isArray(s.flags.omenList)) ? s.flags.omenList.filter((o) => o && o.battles > 0) : [];
+    if (omenList.length) {
+      for (const o of omenList) {
+        omenRows += '<div class="gear-row"><span class="relic-icon">🔭</span><b>' + o.name + '</b>' +
+          '<div class="relic-desc">' + o.desc + '（余 ' + o.battles + ' 场战斗）</div></div>';
+      }
+    }
+
     let itemRows = '';
     const itemIds = Object.keys(s.items).filter((k) => s.items[k] > 0);
     if (itemIds.length === 0) itemRows = '<div class="cp-hint">行囊空空</div>';
@@ -243,6 +252,8 @@ const UI = {
       '<div class="cp-section"><div class="cp-title">装 备</div>' + gearRows + '</div>' +
 
       '<div class="cp-section"><div class="cp-title">遗 物' + (relics.length ? '（' + relics.length + '）' : '') + '</div>' + relicRows + '</div>' +
+
+      (omenRows ? '<div class="cp-section"><div class="cp-title">星 兆</div>' + omenRows + '</div>' : '') +
 
       '<div class="cp-section"><div class="cp-title">行 囊</div>' + itemRows + '</div>' +
 
@@ -333,7 +344,7 @@ const UI = {
 
       let body = '';
       if (tab === 'cards') {
-        const groups = [['通用', null], ['战士', 'warrior'], ['法师', 'mage'], ['游侠', 'ranger']];
+        const groups = [['通用', null], ['战士', 'warrior'], ['法师', 'mage'], ['游侠', 'ranger'], ['星祭司', 'priest']];
         const rarityOrder = { starter: 0, common: 1, rare: 2, boss: 3, curse: 4 };
         for (const [gName, cls] of groups) {
           const list = Object.values(DATA.CARDS)
@@ -527,6 +538,7 @@ const UI = {
       '<div class="help-sec"><b>▸ 卡牌战斗</b><br>每回合获得 <span class="k">3 点行动力</span>，抽 5 张牌。点击卡牌打出：攻击敌方、获取护甲、施加状态。护甲只在本回合内有效。<br>敌人头顶会展示<b>意图</b>（⚔️攻击 / 🛡️防御 / ⬆️强化 / ☠️诅咒），据此制定策略。<br><span class="k">中毒</span>每回合扣血递减 · <span class="k">虚弱</span>输出 ×0.75 · <span class="k">易伤</span>受伤 ×1.5 · <span class="k">力量</span>每次攻击 +N 伤。</div>' +
       '<div class="help-sec"><b>▸ 成长</b><br>战斗胜利获得金币、经验，并从 3 张卡牌中挑选 1 张加入牌组。装备提供永久加成，药水可随时使用。<br>每次<span class="k">升级</span>除生命上限 +8 外，还可从三道<span class="k">祝福</span>中择一（坚韧 / 蛮力 / 涌泉 / 顿悟……），升级攒下的祝福会在回到剧情时一并奉上，也可以全部放弃。<br>矿坑一层可以「🔎 搜寻侧巷与旧工棚」触发 <span class="k">矿坑异闻</span>——倾覆的矿车、星尘苔壁、巷道尽头的矿灯等六则小事件，机缘与风险并存；每处机缘每次冒险只出现一次，搜遍后侧巷就只剩风声了。</div>' +
       '<div class="help-sec"><b>▸ 遗物</b><br><span class="k">⚱️ 星尘遗物</span>是被动生效的稀有物件，无需装备，整局持续有效。商店有售，更多藏在精英战的战利品与隐秘角落——战斗界面的底栏也会亮出你携带的遗物。</div>' +
+      '<div class="help-sec"><b>▸ 星兆</b><br>镇东头的<span class="k">🔭 观星屋</span>里，占星师薇拉可以为你观星问卜（30 金币）：群星会给出随机的星兆——战星（开战获得力量）、岁星（开战护甲）、财星（金币加成）、血星（以血换经验）……在接下来数场战斗中持续生效，角色面板的「星兆」栏会显示剩余场数。</div>' +
       '<div class="help-sec"><b>▸ 淬炼与诅咒</b><br>铁匠铺提供 <span class="k">⚒️ 淬炼</span>（60 金币）：把一张可淬炼的卡牌锤炼成更强的"+"形态，同名卡牌每张单独淬炼。矿坑一层深处藏着 <span class="k">🛕 无面神龛</span>——祝圣、血祭或掳走供品，各有机缘与代价。<br>某些交易与贪念会让 <span class="k">☠️ 诅咒牌</span> 混进牌组：无法打出，只会占据抽牌位，有的还会在回合结束时限你仍在握着它时索取生命。矿坑入口的泉水可以洗净诅咒（40 金币），铃语斋的忘却之铃同样能让它脱手。</div>' +
       '<div class="help-sec"><b>▸ 冒险图鉴</b><br><span class="k">📖 冒险图鉴</span>跨周目收录你获得过的卡牌、持有过的遗物与击败过的敌人。标题画面、菜单或牌组弹窗的"查看全图鉴"均可查阅；未收录的条目以 ？？？ 显示。</div>' +
       '<div class="help-sec"><b>▸ 多周目与难度</b><br>每次开局的界面可选 <span class="k">磨砺（标准）</span> 或 <span class="k">迷雾试炼（困难）</span>：试炼下敌人生命 ×1.35、伤害 +2，但战利品 ×1.25。<br>通关任一结局后，标题画面解锁 <span class="k">✦ 继承开局</span>：带着上一世的全部星尘遗物与半程金币进入下一周目，敌人的血与爪随周目递增。铃语斋还提供 <span class="k">忘却之铃</span>（40 金币），可以从牌组移除一张卡牌，让套路更纯粹。</div>' +
